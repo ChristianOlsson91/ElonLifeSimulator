@@ -1,0 +1,18 @@
+{
+  "locations": [
+    {
+      "id": "pretoria",
+      "displayName": "Pretoria, South Africa",
+      "sceneName": "SouthAfrica_Pretoria",
+      "eraHint": "Act 1 – Childhood",
+      "description": "Home in Pretoria. Books, ideas, and the first spark of ambition."
+    },
+    {
+      "id": "toronto",
+      "displayName": "Toronto, Canada",
+      "sceneName": "Canada_Toronto",
+      "eraHint": "Act 2 – Canada",
+      "description": "A new continent. Study, work, and the road toward Silicon Valley."
+    }
+  ]
+}

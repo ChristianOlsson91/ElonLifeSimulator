@@ -1,0 +1,12 @@
+{
+  "ticketId": "act1_encyclopedia_curiosity",
+  "title": "The Encyclopedia Calling",
+  "companyId": "personal",
+  "companyDisplayName": "Personal Journey",
+  "locationId": "toronto",
+  "locationDisplayName": "Toronto, Canada",
+  "description": "You've nearly finished the encyclopedia. Knowledge has always been a refuge and a rocket. An opportunity opens: relatives in Canada can host you if you commit to studying hard and building a future there. Will you leave Pretoria for the next chapter?",
+  "difficulty": 2,
+  "rewardDescription": "Unlock travel to Canada · +Curiosity · Story progress",
+  "_comment": "Mirrors PrototypeContent.CreateEncyclopediaTicket — community can add more JSON tickets later."
+}

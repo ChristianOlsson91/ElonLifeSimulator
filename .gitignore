@@ -1,4 +1,4 @@
-﻿# Unity generated
+# Unity generated
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -24,13 +24,27 @@
 *.mdb
 *.opendb
 *.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
 .vs/
+.gradle/
+ExportedObj/
+.consulo/
+*.DotSettings.user
+sysinfo.txt
+crashlytics-buildid.txt
+/Assets/AssetStoreTools*
 
-# Builds
+# Keep the pure Core test project file tracked
+!Core.Tests/Core.Tests.csproj
+
+# Builds / packages
 *.apk
 *.aab
-*.unitypackage
 *.app
+*.exe
+*.unitypackage
 
 # OS
 .DS_Store

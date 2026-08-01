@@ -1,0 +1,21 @@
+{
+  "companies": [
+    { "id": "zip2", "displayName": "Zip2", "status": "NotFounded" },
+    { "id": "xcom", "displayName": "X.com", "status": "NotFounded" }
+  ],
+  "problems": [
+    "zip2_first_big_customer",
+    "zip2_maps_directories_tech",
+    "zip2_sale_to_compaq",
+    "xcom_fraud_banking_pressure",
+    "xcom_confinity_merger",
+    "xcom_internal_leadership"
+  ],
+  "act1_events": [
+    "act1_home_intro",
+    "act1_school_staircase",
+    "act1_library_encyclopedia",
+    "act1_rockets_computers_physics",
+    "act1_leave_for_canada"
+  ]
+}

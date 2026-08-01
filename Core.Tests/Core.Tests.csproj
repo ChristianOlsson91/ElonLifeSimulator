@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>ElonLifeSim.Core.Tests</RootNamespace>
+    <AssemblyName>ElonLifeSim.Core.Tests</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Compile shipped Core sources directly — tests exercise real production code. -->
+    <Compile Include="..\Assets\Scripts\Core\Models\**\*.cs" Link="Core\Models\%(Filename)%(Extension)" />
+    <Compile Include="..\Assets\Scripts\Core\Services\**\*.cs" Link="Core\Services\%(Filename)%(Extension)" />
+    <Compile Include="..\Assets\Scripts\Core\Content\**\*.cs" Link="Core\Content\%(Filename)%(Extension)" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>
