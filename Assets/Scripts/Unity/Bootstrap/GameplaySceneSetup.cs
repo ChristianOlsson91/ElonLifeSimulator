@@ -16,8 +16,28 @@ namespace ElonLifeSim.Unity.Bootstrap
         [SerializeField] private Color groundColor = new Color(0.45f, 0.5f, 0.32f, 1f);
         [SerializeField] private Color playerColor = new Color(0.85f, 0.7f, 0.45f, 1f);
 
+        private bool _built;
+
+        /// <summary>Called by RuntimePlayBootstrap when scene objects lack a setup component.</summary>
+        public void Configure(string locId, Color bg, Color ground)
+        {
+            if (!string.IsNullOrEmpty(locId))
+                locationId = locId;
+            backgroundColor = bg;
+            groundColor = ground;
+            if (!_built)
+                Build();
+        }
+
         private void Awake()
         {
+            Build();
+        }
+
+        private void Build()
+        {
+            if (_built) return;
+            _built = true;
             SetupCamera();
             SetupWorld();
             SetupPlayer();
