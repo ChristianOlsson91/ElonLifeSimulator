@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      elon_young_adult_portrait_0: -7995083199730817859
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

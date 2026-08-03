@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      _style_anchor_modern_idle_0: -2224745385561974507
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      elon_early2000s_idle_0: 4282747528039374397
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

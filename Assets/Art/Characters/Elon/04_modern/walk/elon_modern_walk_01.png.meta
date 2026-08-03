@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      elon_modern_walk_01_0: 1904341019971873259
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

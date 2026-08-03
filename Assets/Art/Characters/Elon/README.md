@@ -38,3 +38,11 @@ Path: `Assets/Art/Characters/Elon/`
 - Walk cycles were built as keyframe edits (video walk pipeline unavailable in this environment). Footing may need polish for production.
 - Young SA is a **stylized school-era** design in the same pack language (not a photographic minor likeness).
 - Reference base for modern look: Wikimedia Commons Royal Society portrait (edit-chained into pixel art).
+
+## Likeness pass (update)
+
+Sprites were re-edited **reference-first** from a public adult photo (Wikimedia Royal Society portrait) so face/hair read more like Elon Musk while staying SNES pixel art.
+
+- Modern idle/portrait locked first, then face language propagated to other eras.
+- Walk frames rebuilt from improved idles (5 frames: walk_00..walk_04).
+- Young SA remains stylized school-era game art (not a photographic minor likeness).
