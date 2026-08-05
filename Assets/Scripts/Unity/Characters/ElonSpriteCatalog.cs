@@ -76,14 +76,23 @@ namespace ElonLifeSim.Unity.Characters
 
         public static Sprite LoadSprite(string resourcesPath)
         {
+            // Prefer Texture2D; fall back if Unity imported as Sprite.
             var tex = Resources.Load<Texture2D>(resourcesPath);
+            if (tex == null)
+            {
+                var existing = Resources.Load<Sprite>(resourcesPath);
+                if (existing != null)
+                {
+                    tex = existing.texture;
+                }
+            }
+
             if (tex == null)
             {
                 Debug.LogWarning($"[ElonSpriteCatalog] Missing Resources texture: {resourcesPath}");
                 return null;
             }
 
-            // Resources may reimport as compressed; ensure we can read pixels.
             var readable = MakeReadableMagentaKeyed(tex);
             return Sprite.Create(
                 readable,
