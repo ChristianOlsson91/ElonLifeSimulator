@@ -104,11 +104,25 @@ namespace ElonLifeSim.Unity.UI
             // Dialogue panel (bottom)
             var dialoguePanel = CreatePanel(canvasGo.transform, "DialoguePanel", new Vector2(0.08f, 0), new Vector2(0.92f, 0.34f),
                 new Vector2(0, 10), new Vector2(0, 10), new Color(0.05f, 0.05f, 0.1f, 0.96f));
+
+            // Portrait (left)
+            var portraitGo = new GameObject("Portrait", typeof(RectTransform), typeof(Image));
+            portraitGo.transform.SetParent(dialoguePanel.transform, false);
+            var portraitRt = portraitGo.GetComponent<RectTransform>();
+            portraitRt.anchorMin = new Vector2(0, 0);
+            portraitRt.anchorMax = new Vector2(0, 1);
+            portraitRt.pivot = new Vector2(0, 0.5f);
+            portraitRt.anchoredPosition = new Vector2(12, 0);
+            portraitRt.sizeDelta = new Vector2(96, -24);
+            var portraitImg = portraitGo.GetComponent<Image>();
+            portraitImg.color = Color.white;
+            portraitImg.preserveAspect = true;
+
             var speaker = CreateText(dialoguePanel.transform, "Speaker", "Speaker", 16,
-                new Vector2(16, -12), new Vector2(400, 28), TextAnchor.UpperLeft);
+                new Vector2(120, -12), new Vector2(400, 28), TextAnchor.UpperLeft);
             var body = CreateText(dialoguePanel.transform, "Body", "…", 14,
-                new Vector2(16, -44), new Vector2(-32, 80), TextAnchor.UpperLeft);
-            Stretch(body.rectTransform, new Vector2(0, 0.35f), new Vector2(1, 0.85f), new Vector2(16, 8), new Vector2(-16, -8));
+                new Vector2(120, -44), new Vector2(-32, 80), TextAnchor.UpperLeft);
+            Stretch(body.rectTransform, new Vector2(0, 0.35f), new Vector2(1, 0.85f), new Vector2(120, 8), new Vector2(-16, -8));
             var contBtn = CreateButton(dialoguePanel.transform, "ContinueButton", "Continue", new Vector2(-140, 12), new Vector2(120, 32));
             var contRt = contBtn.GetComponent<RectTransform>();
             contRt.anchorMin = new Vector2(1, 0);
@@ -119,7 +133,7 @@ namespace ElonLifeSim.Unity.UI
             var choicesRoot = new GameObject("ChoicesRoot", typeof(RectTransform), typeof(VerticalLayoutGroup));
             choicesRoot.transform.SetParent(dialoguePanel.transform, false);
             Stretch(choicesRoot.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(1, 0.35f),
-                new Vector2(16, 48), new Vector2(-16, 8));
+                new Vector2(120, 48), new Vector2(-16, 8));
             var vlg = choicesRoot.GetComponent<VerticalLayoutGroup>();
             vlg.spacing = 4;
             vlg.childAlignment = TextAnchor.UpperCenter;
@@ -137,7 +151,7 @@ namespace ElonLifeSim.Unity.UI
             travelUi.BindLocationNav(null, nextLoc);
 
             var dialogueUi = canvasGo.AddComponent<DialogueUI>();
-            dialogueUi.Bind(dialoguePanel, speaker, body, contBtn, choicesRoot.transform);
+            dialogueUi.Bind(dialoguePanel, speaker, body, contBtn, choicesRoot.transform, portraitImg);
 
             var coUi = canvasGo.AddComponent<CompanyDashboardUI>();
             coUi.Bind(session, coPanel, coBody, foundZip2, foundX, coClose, coToggle);

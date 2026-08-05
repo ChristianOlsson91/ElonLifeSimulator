@@ -1,4 +1,5 @@
 using ElonLifeSim.Core.Content;
+using ElonLifeSim.Unity.Characters;
 using ElonLifeSim.Unity.Controllers;
 using ElonLifeSim.Unity.UI;
 using UnityEngine;
@@ -83,25 +84,42 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void SetupPlayer()
         {
-            if (GameObject.Find("Player_YoungElon_PLACEHOLDER") != null) return;
+            if (GameObject.Find("Player_Elon") != null || GameObject.Find("Player_YoungElon_PLACEHOLDER") != null)
+                return;
 
-            var player = new GameObject("Player_YoungElon_PLACEHOLDER");
+            var idle = ElonSpriteCatalog.LoadIdle(locationId);
+            var walk = ElonSpriteCatalog.LoadWalkCycle(locationId);
+
+            var player = new GameObject("Player_Elon");
             player.transform.position = Vector3.zero;
             var sr = player.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateSolidSprite(playerColor, 16, 24);
             sr.sortingOrder = 10;
-            player.transform.localScale = new Vector3(0.5f, 0.75f, 1f);
+            if (idle != null)
+            {
+                sr.sprite = idle;
+                // Scale so character is ~1.8 world units tall.
+                float h = idle.bounds.size.y;
+                if (h > 0.01f)
+                    player.transform.localScale = Vector3.one * (1.8f / h);
+            }
+            else
+            {
+                sr.sprite = CreateSolidSprite(playerColor, 16, 24);
+                player.transform.localScale = new Vector3(0.5f, 0.75f, 1f);
+                Debug.LogWarning("[Elon] Sprite missing — solid placeholder used.");
+            }
 
             var rb = player.AddComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
-            player.AddComponent<PixelPlayerController>();
+            var controller = player.AddComponent<PixelPlayerController>();
+            controller.SetSprites(idle, walk);
 
             var col = player.AddComponent<BoxCollider2D>();
-            col.size = new Vector2(0.8f, 1.2f);
+            col.size = new Vector2(0.7f, 1.1f);
+            col.offset = new Vector2(0f, 0.55f);
 
-            // Visible name tag via TextMesh is overkill; log instead.
-            Debug.Log("[PLACEHOLDER] Young Elon player spawned — WASD/Arrows to move.");
+            Debug.Log($"[Elon] Player spawned for location '{locationId}' era '{ElonSpriteCatalog.EraFolderForLocation(locationId)}'.");
         }
 
         private void SetupControllers()

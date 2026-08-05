@@ -1,48 +1,41 @@
-# Elon character sprites (SNES-style pixel art)
+# Elon character sprites
 
-Path: `Assets/Art/Characters/Elon/`
+## Source pack
 
-## Style
+Imported from `Downloads/elon_pixel_game_assets` (Grok pixel sheets).
 
-- Clean **16-bit / SNES-inspired** pixel art
-- Limited cohesive palette; **magenta `#FF00FF`** flat key background
-- Isolated character, no environment
-- Stylized game proportions; biographical game art of a public figure (not photoreal)
+- **`source_pack/`** — original files (lineup, modern strip, singles)
+- **`01_young_sa` … `05_mars`** — processed idle / portrait / walk (magenta key)
+- **`Resources/Characters/Elon/`** — runtime copies for `Resources.Load`
 
-## Eras
+## Era mapping in game
 
-| Folder | Era | Costume cues |
-|--------|-----|----------------|
-| `01_young_sa` | Young (SA school years) | Navy blazer, red tie, grey pants, book; awkward/youth posture |
-| `02_young_adult_90s` | Canada / early Zip2 | Grey hoodie, white tee, jeans, sneakers |
-| `03_early_2000s` | PayPal / early SpaceX & Tesla | Black turtleneck, khaki pants |
-| `04_modern` | Modern | Black t-shirt, dark pants, confident stance |
-| `05_mars` | Future Mars | Orange/white space suit (settler / EVA look) |
+| Location | Era folder | Look |
+|----------|------------|------|
+| Pretoria | `01_young_sa` | School blazer / shorts |
+| Toronto | `02_young_adult_90s` | Plaid shirt, jeans |
+| Palo Alto | `03_early_2000s` | Purple shirt (Zip2/X.com) |
+| (default) | `04_modern` | Black tee |
+| Mars assets | `05_mars` | White/orange EVA suit |
 
-## Per era files
+## Runtime
 
-- `elon_*_idle.png` — standing idle
-- `elon_*_portrait.png` — dialogue headshot / bust
-- `walk/elon_*_walk_00.png` … `walk_04.png` — **5** walk frames (idle-adjacent + 4 stride poses; use `01`–`04` for cycle or all five)
+- `ElonSpriteCatalog` loads textures from Resources, keys magenta/black to alpha
+- `GameplaySceneSetup` spawns `Player_Elon` with idle + walk cycle
+- `PixelPlayerController` animates walk while moving
+- Dialogue panel shows era portrait
 
-## Unity import (recommended)
+## Unity import
 
-1. Select PNGs → Texture Type **Sprite (2D and UI)**
-2. **Filter Mode: Point (no filter)**
-3. Compression: None or low for crisp pixels
-4. Pixels Per Unit: try **32–64** depending on scene scale
-5. Magenta can be made transparent in a Sprite Editor / shader, or re-export with alpha later
+Textures under Resources should use:
+
+- Texture Type: **Default** or **Sprite** (catalog uses Texture2D + Sprite.Create)
+- Filter Mode: **Point**
+- Compression: **None** (crisp pixels)
+
+If sprites look blurry, select all under `Resources/Characters/Elon` and set Point filter.
 
 ## Notes
 
-- Walk cycles were built as keyframe edits (video walk pipeline unavailable in this environment). Footing may need polish for production.
-- Young SA is a **stylized school-era** design in the same pack language (not a photographic minor likeness).
-- Reference base for modern look: Wikimedia Commons Royal Society portrait (edit-chained into pixel art).
-
-## Likeness pass (update)
-
-Sprites were re-edited **reference-first** from a public adult photo (Wikimedia Royal Society portrait) so face/hair read more like Elon Musk while staying SNES pixel art.
-
-- Modern idle/portrait locked first, then face language propagated to other eras.
-- Walk frames rebuilt from improved idles (5 frames: walk_00..walk_04).
-- Young SA remains stylized school-era game art (not a photographic minor likeness).
+- Walk for non-modern eras currently reuses idle/flip (source pack only had full walk for modern). Replace when more walk sheets exist.
+- Modern has real walk + talk + side variants from the 4-pose strip.

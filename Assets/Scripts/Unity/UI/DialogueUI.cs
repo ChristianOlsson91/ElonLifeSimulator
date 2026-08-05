@@ -1,7 +1,9 @@
 using System;
+using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Models;
 using ElonLifeSim.Core.Services;
 using ElonLifeSim.Unity.Bootstrap;
+using ElonLifeSim.Unity.Characters;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,18 +20,20 @@ namespace ElonLifeSim.Unity.UI
         [SerializeField] private Button continueButton;
         [SerializeField] private Transform choicesRoot;
         [SerializeField] private Button choiceButtonPrefab;
+        [SerializeField] private Image portraitImage;
 
         private DialogueRunner _runner;
         private Action _onComplete;
         private Button[] _runtimeChoiceButtons;
 
-        public void Bind(GameObject panel, Text speaker, Text body, Button cont, Transform choicesParent)
+        public void Bind(GameObject panel, Text speaker, Text body, Button cont, Transform choicesParent, Image portrait = null)
         {
             panelRoot = panel;
             speakerText = speaker;
             bodyText = body;
             continueButton = cont;
             choicesRoot = choicesParent;
+            portraitImage = portrait;
             if (continueButton != null)
             {
                 continueButton.onClick.RemoveAllListeners();
@@ -37,6 +41,21 @@ namespace ElonLifeSim.Unity.UI
             }
             if (panelRoot != null)
                 panelRoot.SetActive(false);
+            RefreshPortrait();
+        }
+
+        private void RefreshPortrait()
+        {
+            if (portraitImage == null) return;
+            var session = GameBootstrap.RequireSession();
+            var loc = session?.Travel.CurrentLocationId ?? PrototypeContent.LocationPretoria;
+            var sprite = ElonSpriteCatalog.LoadPortrait(loc);
+            if (sprite != null)
+            {
+                portraitImage.sprite = sprite;
+                portraitImage.preserveAspect = true;
+                portraitImage.gameObject.SetActive(true);
+            }
         }
 
         public void Play(DialogueDefinition definition, Action onComplete = null)
@@ -59,6 +78,7 @@ namespace ElonLifeSim.Unity.UI
 
             if (panelRoot != null)
                 panelRoot.SetActive(true);
+            RefreshPortrait();
             Refresh();
         }
 
