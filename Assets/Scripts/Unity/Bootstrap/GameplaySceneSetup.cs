@@ -7,8 +7,7 @@ using UnityEngine;
 namespace ElonLifeSim.Unity.Bootstrap
 {
     /// <summary>
-    /// Runtime setup for location scenes: camera, placeholder floor, young Elon sprite, controllers.
-    /// Marked PLACEHOLDER throughout.
+    /// Runtime setup for location scenes: camera, placeholder floor, era Elon sprite, controllers.
     /// </summary>
     public sealed class GameplaySceneSetup : MonoBehaviour
     {
@@ -84,7 +83,11 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void SetupPlayer()
         {
-            if (GameObject.Find("Player_Elon") != null || GameObject.Find("Player_YoungElon_PLACEHOLDER") != null)
+            var leftover = GameObject.Find("Player_YoungElon_PLACEHOLDER");
+            if (leftover != null)
+                DestroyImmediate(leftover);
+
+            if (GameObject.Find("Player_Elon") != null)
                 return;
 
             var idle = ElonSpriteCatalog.LoadIdle(locationId);
@@ -104,9 +107,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             }
             else
             {
-                sr.sprite = CreateSolidSprite(playerColor, 16, 24);
-                player.transform.localScale = new Vector3(0.5f, 0.75f, 1f);
-                Debug.LogWarning("[Elon] Sprite missing — solid placeholder used.");
+                Debug.LogError($"[Elon] Missing idle sprite for location '{locationId}' era '{ElonSpriteCatalog.EraFolderForLocation(locationId)}'.");
             }
 
             var rb = player.AddComponent<Rigidbody2D>();

@@ -104,7 +104,8 @@ namespace ElonLifeSim.Unity.Characters
         }
 
         /// <summary>
-        /// Copies texture, converts near-magenta and near-black to alpha, Point filter.
+        /// Copies texture, converts near-magenta (#FF00FF) to alpha, Point filter.
+        /// Does not key black or dark clothing/hair/shoes.
         /// </summary>
         public static Texture2D MakeReadableMagentaKeyed(Texture2D source)
         {
@@ -126,17 +127,8 @@ namespace ElonLifeSim.Unity.Characters
             for (int i = 0; i < pixels.Length; i++)
             {
                 var c = pixels[i];
-                // Magenta key
                 if (c.r > 200 && c.g < 40 && c.b > 200)
-                {
                     pixels[i] = new Color32(0, 0, 0, 0);
-                    continue;
-                }
-                // Near-black leftover key
-                if (c.r < 12 && c.g < 12 && c.b < 12)
-                {
-                    pixels[i] = new Color32(0, 0, 0, 0);
-                }
             }
             tmp.SetPixels32(pixels);
             tmp.Apply(updateMipmaps: false, makeNoLongerReadable: false);

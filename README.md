@@ -157,8 +157,8 @@ Exercises **shipped** Core: Act1 unlock gate, company found/stats, distinct choi
 
 ## Placeholder art
 
-- `Assets/Art/Placeholders/` + runtime names like `Player_YoungElon_PLACEHOLDER`, `HUD_Canvas_PLACEHOLDER`.
-- Replace with 16-bit / SNES-style art; era palettes: muted early years → vibrant modern → Mars later.
+- World/HUD placeholders: `Assets/Art/Placeholders/`, runtime names like `HUD_Canvas_PLACEHOLDER`.
+- Playable Elon is `Player_Elon` from `Assets/Art/Characters/Elon/` (school look in Pretoria). See that folder's README.
 
 ---
 
