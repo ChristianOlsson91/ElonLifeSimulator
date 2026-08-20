@@ -1,4 +1,5 @@
 using ElonLifeSim.Core.Content;
+using ElonLifeSim.Unity.Characters;
 using ElonLifeSim.Unity.Controllers;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -79,12 +80,19 @@ namespace ElonLifeSim.Unity.Bootstrap
         {
             EnsureCamera(bg);
 
-            if (Object.FindFirstObjectByType<GameplaySceneSetup>() == null)
+            var existing = Object.FindFirstObjectByType<GameplaySceneSetup>();
+            if (existing == null)
             {
                 var go = new GameObject("GameplaySceneSetup_Runtime");
                 var setup = go.AddComponent<GameplaySceneSetup>();
                 setup.Configure(locationId, bg, ground);
             }
+            else
+            {
+                existing.RefreshPlayer(locationId);
+            }
+
+            ElonAppearanceController.Ensure();
         }
 
         private static void EnsureCamera(Color background)

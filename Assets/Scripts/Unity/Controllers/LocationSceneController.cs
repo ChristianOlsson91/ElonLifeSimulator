@@ -1,5 +1,6 @@
 using ElonLifeSim.Core.Content;
 using ElonLifeSim.Unity.Bootstrap;
+using ElonLifeSim.Unity.Characters;
 using ElonLifeSim.Unity.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,6 +57,8 @@ namespace ElonLifeSim.Unity.Controllers
                 locationLabel.text = locationId;
 
             EnsureHud();
+            ElonAppearanceController.Ensure();
+            ElonAppearanceApplier.Apply(locationId);
 
             if (playAct1OnStart && locationId == PrototypeContent.LocationPretoria && !s_act1AutoStarted)
             {

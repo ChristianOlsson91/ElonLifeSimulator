@@ -1,3 +1,4 @@
+using ElonLifeSim.Unity.Characters;
 using UnityEngine;
 
 namespace ElonLifeSim.Unity.Controllers
@@ -30,6 +31,16 @@ namespace ElonLifeSim.Unity.Controllers
                 _sr = GetComponent<SpriteRenderer>();
             if (_sr != null && _idle != null)
                 _sr.sprite = _idle;
+            _animTime = 0f;
+            _frame = 0;
+        }
+
+        /// <summary>Load and apply idle + walk for a location (and optional reserved act hook).</summary>
+        public void ApplyLocation(string locationId, string actId = null)
+        {
+            var idle = ElonSpriteCatalog.LoadIdle(locationId, actId);
+            var walk = ElonSpriteCatalog.LoadWalkCycle(locationId, actId);
+            SetSprites(idle, walk);
         }
 
         private void Awake()

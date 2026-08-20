@@ -1,6 +1,7 @@
 using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Services;
 using ElonLifeSim.Unity.Bootstrap;
+using ElonLifeSim.Unity.Characters;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -46,6 +47,8 @@ namespace ElonLifeSim.Unity.Controllers
 
         private void OnLocationChanged(string previousId, string newId)
         {
+            ElonAppearanceApplier.Apply(newId);
+
             if (_loading) return;
             var sceneName = PrototypeContent.GetSceneForLocation(newId);
             if (string.IsNullOrEmpty(sceneName))

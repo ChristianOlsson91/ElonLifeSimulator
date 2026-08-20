@@ -10,63 +10,43 @@ namespace ElonLifeSim.Unity.Characters
     /// </summary>
     public static class ElonSpriteCatalog
     {
-        public const string ResourcesRoot = "Characters/Elon";
+        public const string ResourcesRoot = ElonEraResolver.ResourcesRoot;
 
-        /// <summary>Era folder names under Resources/Characters/Elon/.</summary>
-        public static string EraFolderForLocation(string locationId)
+        /// <summary>Era folder names under Resources/Characters/Elon/. Delegates to Core.</summary>
+        public static string EraFolderForLocation(string locationId, string actId = null)
         {
-            if (locationId == PrototypeContent.LocationPretoria)
-                return "01_young_sa";
-            if (locationId == PrototypeContent.LocationToronto)
-                return "02_young_adult_90s";
-            if (locationId == PrototypeContent.LocationPaloAlto)
-                return "03_early_2000s"; // Zip2 / X.com era look
-            return "04_modern";
+            return ElonEraResolver.EraFolderForLocation(locationId, actId);
         }
 
         public static string PrefixForEra(string eraFolder)
         {
-            switch (eraFolder)
-            {
-                case "01_young_sa": return "elon_young_sa";
-                case "02_young_adult_90s": return "elon_young_adult";
-                case "03_early_2000s": return "elon_early2000s";
-                case "04_modern": return "elon_modern";
-                case "05_mars": return "elon_mars";
-                default: return "elon_modern";
-            }
+            return ElonEraResolver.PrefixForEra(eraFolder);
         }
 
-        public static Sprite LoadIdle(string locationId)
+        public static Sprite LoadIdle(string locationId, string actId = null)
         {
-            var era = EraFolderForLocation(locationId);
-            var prefix = PrefixForEra(era);
-            return LoadSprite($"{ResourcesRoot}/{era}/{prefix}_idle");
+            return LoadSprite(ElonEraResolver.IdleResourceKey(locationId, actId));
         }
 
-        public static Sprite LoadPortrait(string locationId)
+        public static Sprite LoadPortrait(string locationId, string actId = null)
         {
-            var era = EraFolderForLocation(locationId);
-            var prefix = PrefixForEra(era);
-            return LoadSprite($"{ResourcesRoot}/{era}/{prefix}_portrait");
+            return LoadSprite(ElonEraResolver.PortraitResourceKey(locationId, actId));
         }
 
         /// <summary>Walk frames in play order (0..n-1). Falls back to idle only if missing.</summary>
-        public static Sprite[] LoadWalkCycle(string locationId)
+        public static Sprite[] LoadWalkCycle(string locationId, string actId = null)
         {
-            var era = EraFolderForLocation(locationId);
-            var prefix = PrefixForEra(era);
             var list = new List<Sprite>();
             for (int i = 0; i <= 4; i++)
             {
-                var s = LoadSprite($"{ResourcesRoot}/{era}/walk/{prefix}_walk_0{i}");
+                var s = LoadSprite(ElonEraResolver.WalkResourceKey(locationId, i, actId));
                 if (s != null)
                     list.Add(s);
             }
 
             if (list.Count == 0)
             {
-                var idle = LoadIdle(locationId);
+                var idle = LoadIdle(locationId, actId);
                 if (idle != null)
                     list.Add(idle);
             }

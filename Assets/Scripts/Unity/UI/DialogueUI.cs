@@ -44,7 +44,7 @@ namespace ElonLifeSim.Unity.UI
             RefreshPortrait();
         }
 
-        private void RefreshPortrait()
+        public void RefreshPortrait()
         {
             if (portraitImage == null) return;
             var session = GameBootstrap.RequireSession();

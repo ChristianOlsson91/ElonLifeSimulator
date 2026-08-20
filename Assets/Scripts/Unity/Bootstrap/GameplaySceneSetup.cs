@@ -27,6 +27,16 @@ namespace ElonLifeSim.Unity.Bootstrap
             groundColor = ground;
             if (!_built)
                 Build();
+            else
+                SetupPlayer();
+        }
+
+        /// <summary>Re-apply era sprites for an existing or new Player_Elon.</summary>
+        public void RefreshPlayer(string locId)
+        {
+            if (!string.IsNullOrEmpty(locId))
+                locationId = locId;
+            SetupPlayer();
         }
 
         private void Awake()
@@ -83,44 +93,7 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void SetupPlayer()
         {
-            var leftover = GameObject.Find("Player_YoungElon_PLACEHOLDER");
-            if (leftover != null)
-                DestroyImmediate(leftover);
-
-            if (GameObject.Find("Player_Elon") != null)
-                return;
-
-            var idle = ElonSpriteCatalog.LoadIdle(locationId);
-            var walk = ElonSpriteCatalog.LoadWalkCycle(locationId);
-
-            var player = new GameObject("Player_Elon");
-            player.transform.position = Vector3.zero;
-            var sr = player.AddComponent<SpriteRenderer>();
-            sr.sortingOrder = 10;
-            if (idle != null)
-            {
-                sr.sprite = idle;
-                // Scale so character is ~1.8 world units tall.
-                float h = idle.bounds.size.y;
-                if (h > 0.01f)
-                    player.transform.localScale = Vector3.one * (1.8f / h);
-            }
-            else
-            {
-                Debug.LogError($"[Elon] Missing idle sprite for location '{locationId}' era '{ElonSpriteCatalog.EraFolderForLocation(locationId)}'.");
-            }
-
-            var rb = player.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            rb.freezeRotation = true;
-            var controller = player.AddComponent<PixelPlayerController>();
-            controller.SetSprites(idle, walk);
-
-            var col = player.AddComponent<BoxCollider2D>();
-            col.size = new Vector2(0.7f, 1.1f);
-            col.offset = new Vector2(0f, 0.55f);
-
-            Debug.Log($"[Elon] Player spawned for location '{locationId}' era '{ElonSpriteCatalog.EraFolderForLocation(locationId)}'.");
+            ElonAppearanceApplier.Apply(locationId);
         }
 
         private void SetupControllers()
@@ -145,6 +118,8 @@ namespace ElonLifeSim.Unity.Bootstrap
                 var go = new GameObject("GameplayHudBuilder");
                 go.AddComponent<GameplayHudBuilder>();
             }
+
+            ElonAppearanceController.Ensure();
         }
 
         private static Sprite CreateSolidSprite(Color color, int w, int h)

@@ -57,6 +57,10 @@ namespace ElonLifeSim.Core.Tests
             Run("TravelMapSelection_FreeTravelAmongUnlocked", TestFreeMapTravelSelection);
             Run("Session_FreeTravel_AfterAct1WithoutTicket", TestSessionFreeTravelAfterAct1);
 
+            // Elon era swap: shipped location → era (+ resource keys); act hook ignored
+            Run("ElonEra_LocationMappingAndResourceKeys", TestElonEraLocationMappingAndResourceKeys);
+            Run("ElonEra_SwapOnTravelLocationChanged", TestElonEraSwapOnTravelLocationChanged);
+
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
             if (_failed > 0)
@@ -487,6 +491,98 @@ namespace ElonLifeSim.Core.Tests
             Assert(target == PrototypeContent.LocationToronto, "target canada");
             Assert(session.TravelTo(target), "session free travel");
             Assert(session.Travel.CurrentLocationId == PrototypeContent.LocationToronto, "at canada free");
+        }
+
+        private static void TestElonEraLocationMappingAndResourceKeys()
+        {
+            var pret = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPretoria);
+            var tor = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationToronto);
+            var palo = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPaloAlto);
+            var unknown = ElonEraResolver.EraFolderForLocation("not_a_place");
+            var missing = ElonEraResolver.EraFolderForLocation(null);
+
+            Assert(pret == "01_young_sa", "pretoria → school era, got " + pret);
+            Assert(tor == "02_young_adult_90s", "toronto → 90s era, got " + tor);
+            Assert(palo == "03_early_2000s", "palo alto → early-2000s era, got " + palo);
+            Assert(unknown == "04_modern", "unknown → modern, got " + unknown);
+            Assert(missing == "04_modern", "null → modern, got " + missing);
+            Assert(pret != tor && tor != palo && pret != palo, "named location eras must differ");
+
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationPretoria)
+                   == "Characters/Elon/01_young_sa/elon_young_sa_idle", "pretoria idle key");
+            Assert(ElonEraResolver.PortraitResourceKey(PrototypeContent.LocationPretoria)
+                   == "Characters/Elon/01_young_sa/elon_young_sa_portrait", "pretoria portrait key");
+            Assert(ElonEraResolver.WalkResourceKey(PrototypeContent.LocationPretoria, 0)
+                   == "Characters/Elon/01_young_sa/walk/elon_young_sa_walk_00", "pretoria walk_00 key");
+
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationToronto)
+                   == "Characters/Elon/02_young_adult_90s/elon_young_adult_idle", "toronto idle key");
+            Assert(ElonEraResolver.PortraitResourceKey(PrototypeContent.LocationToronto)
+                   == "Characters/Elon/02_young_adult_90s/elon_young_adult_portrait", "toronto portrait key");
+            Assert(ElonEraResolver.WalkResourceKey(PrototypeContent.LocationToronto, 1)
+                   == "Characters/Elon/02_young_adult_90s/walk/elon_young_adult_walk_01", "toronto walk_01 key");
+
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationPaloAlto)
+                   == "Characters/Elon/03_early_2000s/elon_early2000s_idle", "palo idle key");
+            Assert(ElonEraResolver.PortraitResourceKey(PrototypeContent.LocationPaloAlto)
+                   == "Characters/Elon/03_early_2000s/elon_early2000s_portrait", "palo portrait key");
+            Assert(ElonEraResolver.WalkResourceKey(PrototypeContent.LocationPaloAlto, 0)
+                   == "Characters/Elon/03_early_2000s/walk/elon_early2000s_walk_00", "palo walk_00 key");
+
+            Assert(ElonEraResolver.IdleResourceKey("somewhere_else")
+                   == "Characters/Elon/04_modern/elon_modern_idle", "default idle key");
+            Assert(ElonEraResolver.EraFolderForLocation("mars") == "05_mars", "mars location selects mars era");
+
+            // Act hook exists but must not change Pretoria / Toronto / Palo Alto.
+            Assert(ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPretoria, "act8_mars") == pret,
+                "actId must not override Pretoria");
+            Assert(ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationToronto, "act3") == tor,
+                "actId must not override Toronto");
+            Assert(ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPaloAlto, "act8") == palo,
+                "actId must not override Palo Alto");
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationPretoria, "act8")
+                   == ElonEraResolver.IdleResourceKey(PrototypeContent.LocationPretoria),
+                "actId must not change Pretoria idle key");
+        }
+
+        private static void TestElonEraSwapOnTravelLocationChanged()
+        {
+            var travel = new TravelService();
+            travel.RegisterLocations(PrototypeContent.CreateLocations());
+            travel.SetStartingLocation(PrototypeContent.LocationPretoria);
+            travel.Unlock(PrototypeContent.LocationToronto);
+            travel.Unlock(PrototypeContent.LocationPaloAlto);
+
+            string eraFromEvent = null;
+            string idleFromEvent = null;
+            string portraitFromEvent = null;
+            travel.LocationChanged += (_, newId) =>
+            {
+                eraFromEvent = ElonEraResolver.EraFolderForLocation(newId);
+                idleFromEvent = ElonEraResolver.IdleResourceKey(newId);
+                portraitFromEvent = ElonEraResolver.PortraitResourceKey(newId);
+            };
+
+            Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "01_young_sa",
+                "start Pretoria school era");
+
+            Assert(travel.TravelTo(PrototypeContent.LocationToronto), "travel toronto");
+            Assert(eraFromEvent == "02_young_adult_90s", "LocationChanged era toronto, got " + eraFromEvent);
+            Assert(idleFromEvent == "Characters/Elon/02_young_adult_90s/elon_young_adult_idle",
+                "LocationChanged idle toronto");
+            Assert(portraitFromEvent == "Characters/Elon/02_young_adult_90s/elon_young_adult_portrait",
+                "LocationChanged portrait toronto");
+            Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "02_young_adult_90s",
+                "current after toronto");
+
+            Assert(travel.TravelTo(PrototypeContent.LocationPaloAlto), "travel palo alto");
+            Assert(eraFromEvent == "03_early_2000s", "LocationChanged era palo, got " + eraFromEvent);
+            Assert(idleFromEvent == "Characters/Elon/03_early_2000s/elon_early2000s_idle",
+                "LocationChanged idle palo");
+            Assert(portraitFromEvent == "Characters/Elon/03_early_2000s/elon_early2000s_portrait",
+                "LocationChanged portrait palo");
+            Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "03_early_2000s",
+                "current after palo");
         }
     }
 }
