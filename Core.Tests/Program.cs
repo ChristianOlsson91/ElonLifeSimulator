@@ -60,6 +60,8 @@ namespace ElonLifeSim.Core.Tests
             // Elon era swap: shipped location → era (+ resource keys); act hook ignored
             Run("ElonEra_LocationMappingAndResourceKeys", TestElonEraLocationMappingAndResourceKeys);
             Run("ElonEra_SwapOnTravelLocationChanged", TestElonEraSwapOnTravelLocationChanged);
+            Run("DebugJump_F1F2F3_MapsAndUnlockTravelWithoutAct1", TestDebugJumpF1F2F3);
+            Run("DebugJump_F4F5_MissingAsPlaceOnCurrentRegistry", TestDebugJumpF4F5Missing);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -583,6 +585,101 @@ namespace ElonLifeSim.Core.Tests
                 "LocationChanged portrait palo");
             Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "03_early_2000s",
                 "current after palo");
+        }
+
+        private static void TestDebugJumpF1F2F3()
+        {
+            var f1 = DebugLocationJumpMap.ForKey(1);
+            var f2 = DebugLocationJumpMap.ForKey(2);
+            var f3 = DebugLocationJumpMap.ForKey(3);
+            Assert(f1.LocationId == PrototypeContent.LocationPretoria, "F1 location");
+            Assert(f2.LocationId == PrototypeContent.LocationToronto, "F2 location");
+            Assert(f3.LocationId == PrototypeContent.LocationPaloAlto, "F3 location");
+            Assert(f1.EraFolder == "01_young_sa", "F1 era " + f1.EraFolder);
+            Assert(f2.EraFolder == "02_young_adult_90s", "F2 era " + f2.EraFolder);
+            Assert(f3.EraFolder == "03_early_2000s", "F3 era " + f3.EraFolder);
+            Assert(f1.PlaceExists && f2.PlaceExists && f3.PlaceExists, "F1–F3 places exist");
+            Assert(f1.EraFolder != f2.EraFolder && f2.EraFolder != f3.EraFolder && f1.EraFolder != f3.EraFolder,
+                "F1–F3 eras differ");
+
+            Assert(ElonEraResolver.IdleResourceKey(f1.LocationId)
+                   == "Characters/Elon/01_young_sa/elon_young_sa_idle", "F1 idle");
+            Assert(ElonEraResolver.PortraitResourceKey(f1.LocationId)
+                   == "Characters/Elon/01_young_sa/elon_young_sa_portrait", "F1 portrait");
+            Assert(ElonEraResolver.IdleResourceKey(f2.LocationId)
+                   == "Characters/Elon/02_young_adult_90s/elon_young_adult_idle", "F2 idle");
+            Assert(ElonEraResolver.PortraitResourceKey(f2.LocationId)
+                   == "Characters/Elon/02_young_adult_90s/elon_young_adult_portrait", "F2 portrait");
+            Assert(ElonEraResolver.IdleResourceKey(f3.LocationId)
+                   == "Characters/Elon/03_early_2000s/elon_early2000s_idle", "F3 idle");
+            Assert(ElonEraResolver.PortraitResourceKey(f3.LocationId)
+                   == "Characters/Elon/03_early_2000s/elon_early2000s_portrait", "F3 portrait");
+
+            // Unlock + TravelTo on TravelService — no Act1 complete, no GameSession.TravelTo.
+            var session = new GameSession();
+            session.StartNewGame();
+            Assert(!session.Act1.IsComplete, "act1 not complete");
+            Assert(!session.Travel.IsUnlocked(PrototypeContent.LocationToronto), "toronto locked until jump");
+            Assert(!session.Travel.IsUnlocked(PrototypeContent.LocationPaloAlto), "palo locked until jump");
+
+            string eraFromEvent = null;
+            session.Travel.LocationChanged += (_, id) =>
+                eraFromEvent = ElonEraResolver.EraFolderForLocation(id);
+
+            var r1 = DebugLocationJumpMap.TryJump(session.Travel, 1);
+            Assert(!r1.PlaceMissing, "F1 not missing");
+            Assert(r1.ToLocationId == PrototypeContent.LocationPretoria, "F1 stays/goes pretoria");
+            Assert(r1.EraFolder == "01_young_sa", "F1 result era");
+            Assert(r1.Log == DebugLocationJumpMap.FormatLog(r1.FromLocationId, r1.ToLocationId, r1.EraFolder, false),
+                "F1 log");
+            Assert(r1.Log.Contains("[DebugJump]") && r1.Log.Contains("era=01_young_sa"), "F1 log tags");
+            Assert(!session.Act1.IsComplete, "F1 did not complete act1");
+
+            var r2 = DebugLocationJumpMap.TryJump(session.Travel, 2);
+            Assert(r2.Moved, "F2 moved");
+            Assert(r2.ToLocationId == PrototypeContent.LocationToronto, "F2 toronto");
+            Assert(r2.EraFolder == "02_young_adult_90s", "F2 era");
+            Assert(eraFromEvent == "02_young_adult_90s", "LocationChanged era F2");
+            Assert(session.Travel.CurrentLocationId == PrototypeContent.LocationToronto, "travel current F2");
+            Assert(session.Travel.IsUnlocked(PrototypeContent.LocationToronto), "F2 unlocked toronto");
+            Assert(!session.Act1.IsComplete, "F2 did not play act1");
+            Assert(r2.Log == "[DebugJump] pretoria → toronto | era=02_young_adult_90s", "F2 log exact: " + r2.Log);
+
+            var r3 = DebugLocationJumpMap.TryJump(session.Travel, 3);
+            Assert(r3.Moved, "F3 moved");
+            Assert(r3.ToLocationId == PrototypeContent.LocationPaloAlto, "F3 palo");
+            Assert(r3.EraFolder == "03_early_2000s", "F3 era");
+            Assert(eraFromEvent == "03_early_2000s", "LocationChanged era F3");
+            Assert(!session.Act1.IsComplete, "F3 did not play act1");
+            Assert(r3.Log == "[DebugJump] toronto → palo_alto | era=03_early_2000s", "F3 log exact: " + r3.Log);
+        }
+
+        private static void TestDebugJumpF4F5Missing()
+        {
+            var registry = PrototypeContent.CreateLocations();
+            var f4 = DebugLocationJumpMap.ForKey(4, registry);
+            var f5 = DebugLocationJumpMap.ForKey(5, registry);
+            Assert(!f4.PlaceExists, "F4 modern not a registered place");
+            Assert(f4.EraFolder == "04_modern", "F4 era target");
+            Assert(!f5.PlaceExists, "F5 mars not a registered place");
+            Assert(f5.EraFolder == "05_mars", "F5 era target");
+
+            var travel = new TravelService();
+            travel.RegisterLocations(registry);
+            travel.SetStartingLocation(PrototypeContent.LocationPretoria);
+
+            var r4 = DebugLocationJumpMap.TryJump(travel, 4);
+            Assert(r4.PlaceMissing, "F4 missing as place");
+            Assert(!r4.Moved, "F4 did not travel");
+            Assert(travel.CurrentLocationId == PrototypeContent.LocationPretoria, "F4 stayed");
+            Assert(r4.Log.Contains("[DebugJump]") && r4.Log.Contains("era=04_modern") && r4.Log.Contains("missing as place"),
+                "F4 log: " + r4.Log);
+
+            var r5 = DebugLocationJumpMap.TryJump(travel, 5);
+            Assert(r5.PlaceMissing, "F5 missing as place");
+            Assert(!r5.Moved, "F5 did not travel");
+            Assert(travel.CurrentLocationId == PrototypeContent.LocationPretoria, "F5 stayed");
+            Assert(r5.Log.Contains("era=05_mars") && r5.Log.Contains("missing as place"), "F5 log: " + r5.Log);
         }
     }
 }

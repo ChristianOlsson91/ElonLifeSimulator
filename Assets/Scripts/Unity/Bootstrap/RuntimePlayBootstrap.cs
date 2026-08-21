@@ -93,6 +93,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             }
 
             ElonAppearanceController.Ensure();
+            DebugLocationJump.Ensure();
         }
 
         private static void EnsureCamera(Color background)

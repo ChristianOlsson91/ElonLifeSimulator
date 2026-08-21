@@ -120,6 +120,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             }
 
             ElonAppearanceController.Ensure();
+            DebugLocationJump.Ensure();
         }
 
         private static Sprite CreateSolidSprite(Color color, int w, int h)
