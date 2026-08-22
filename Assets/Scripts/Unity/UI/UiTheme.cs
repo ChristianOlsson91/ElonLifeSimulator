@@ -32,7 +32,7 @@ namespace ElonLifeSim.Unity.UI
 
         public static Color Border => new Color(0.28f, 0.38f, 0.46f, 0.85f);
 
-        public static Font Font()
+        public static Font UiFont()
         {
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (font == null)
@@ -181,7 +181,7 @@ namespace ElonLifeSim.Unity.UI
             rt.anchoredPosition = pos;
             rt.sizeDelta = dim;
             var t = go.GetComponent<Text>();
-            t.font = Font();
+            t.font = UiFont();
             t.text = content;
             t.fontSize = size;
             t.color = Title;
@@ -222,7 +222,7 @@ namespace ElonLifeSim.Unity.UI
             btn.colors = ColorBlockFor(false);
             if (label != null)
             {
-                label.font = Font();
+                label.font = UiFont();
                 label.color = Title;
                 label.fontSize = UiStyleTokens.BodyFontSize;
             }
