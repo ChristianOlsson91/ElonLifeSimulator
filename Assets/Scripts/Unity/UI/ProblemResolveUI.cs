@@ -68,13 +68,19 @@ namespace ElonLifeSim.Unity.UI
             }
 
             BuildChoices(problem);
-            if (panelRoot != null)
+            var hud = HudPanelController.Find();
+            if (hud != null)
+                hud.Open(HudLargePanel.Resolve);
+            else if (panelRoot != null)
                 panelRoot.SetActive(true);
         }
 
         public void Hide()
         {
-            if (panelRoot != null)
+            var hud = HudPanelController.Find();
+            if (hud != null)
+                hud.CloseIf(HudLargePanel.Resolve);
+            else if (panelRoot != null)
                 panelRoot.SetActive(false);
             ClearChoices();
         }

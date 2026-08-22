@@ -122,6 +122,15 @@ namespace ElonLifeSim.Unity.UI
 
         public void Toggle()
         {
+            var hud = HudPanelController.Find();
+            if (hud != null)
+            {
+                hud.Toggle(HudLargePanel.Inbox);
+                if (hud.IsOpen(HudLargePanel.Inbox))
+                    Refresh();
+                return;
+            }
+
             if (panelRoot == null) return;
             if (panelRoot.activeSelf) Hide();
             else Show();
@@ -129,13 +138,23 @@ namespace ElonLifeSim.Unity.UI
 
         public void Show()
         {
-            if (panelRoot != null)
+            var hud = HudPanelController.Find();
+            if (hud != null)
+                hud.Open(HudLargePanel.Inbox);
+            else if (panelRoot != null)
                 panelRoot.SetActive(true);
             Refresh();
         }
 
         public void Hide()
         {
+            var hud = HudPanelController.Find();
+            if (hud != null)
+            {
+                hud.CloseIf(HudLargePanel.Inbox);
+                return;
+            }
+
             if (panelRoot != null)
                 panelRoot.SetActive(false);
         }

@@ -68,7 +68,7 @@ namespace ElonLifeSim.Unity.UI
             if (openMapButton != null)
             {
                 openMapButton.onClick.RemoveAllListeners();
-                openMapButton.onClick.AddListener(Show);
+                openMapButton.onClick.AddListener(Toggle);
             }
             if (closeButton != null)
             {
@@ -92,9 +92,31 @@ namespace ElonLifeSim.Unity.UI
             }
         }
 
+        public void Toggle()
+        {
+            var hud = HudPanelController.Find();
+            if (hud != null)
+            {
+                hud.Toggle(HudLargePanel.Map);
+                if (hud.IsOpen(HudLargePanel.Map))
+                {
+                    EnsureDefaultTarget();
+                    Refresh();
+                }
+                return;
+            }
+
+            if (panelRoot == null) return;
+            if (panelRoot.activeSelf) Hide();
+            else Show();
+        }
+
         public void Show()
         {
-            if (panelRoot != null)
+            var hud = HudPanelController.Find();
+            if (hud != null)
+                hud.Open(HudLargePanel.Map);
+            else if (panelRoot != null)
                 panelRoot.SetActive(true);
             EnsureDefaultTarget();
             Refresh();
@@ -102,6 +124,13 @@ namespace ElonLifeSim.Unity.UI
 
         public void Hide()
         {
+            var hud = HudPanelController.Find();
+            if (hud != null)
+            {
+                hud.CloseIf(HudLargePanel.Map);
+                return;
+            }
+
             if (panelRoot != null)
                 panelRoot.SetActive(false);
         }

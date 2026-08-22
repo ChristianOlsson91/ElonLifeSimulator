@@ -76,6 +76,7 @@ namespace ElonLifeSim.Unity.UI
                 return;
             }
 
+            HudPanelController.Find()?.PrepareForDialogueOrStory();
             if (panelRoot != null)
                 panelRoot.SetActive(true);
             RefreshPortrait();

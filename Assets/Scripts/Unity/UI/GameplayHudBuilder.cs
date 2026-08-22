@@ -12,7 +12,7 @@ namespace ElonLifeSim.Unity.UI
     {
         private void Awake()
         {
-            if (FindFirstObjectByType<Canvas>() != null &&
+            if (GameObject.Find("HUD_Canvas_PLACEHOLDER") != null &&
                 FindFirstObjectByType<InboxUI>() != null)
             {
                 return;
@@ -75,7 +75,7 @@ namespace ElonLifeSim.Unity.UI
 
             // Companies panel
             var coPanel = CreatePanel(canvasGo.transform, "CompaniesPanel", new Vector2(0.2f, 0.15f), new Vector2(0.8f, 0.85f),
-                new Vector2(0, 0), new Vector2(0, 0), new Color(0.1f, 0.1f, 0.16f, 0.96f));
+                new Vector2(0, 0), new Vector2(0, -56), new Color(0.1f, 0.1f, 0.16f, 0.96f));
             var coBody = CreateText(coPanel.transform, "CompaniesBody", "Companies", 13,
                 new Vector2(12, -12), new Vector2(-24, 280), TextAnchor.UpperLeft);
             Stretch(coBody.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 1), new Vector2(12, 12), new Vector2(-12, -12));
@@ -85,7 +85,7 @@ namespace ElonLifeSim.Unity.UI
 
             // Problem resolve panel
             var resolvePanel = CreatePanel(canvasGo.transform, "ProblemResolvePanel", new Vector2(0.15f, 0.2f), new Vector2(0.85f, 0.88f),
-                new Vector2(0, 0), new Vector2(0, 0), new Color(0.09f, 0.12f, 0.1f, 0.97f));
+                new Vector2(0, 0), new Vector2(0, -56), new Color(0.09f, 0.12f, 0.1f, 0.97f));
             var resHeader = CreateText(resolvePanel.transform, "ResolveHeader", "Problem", 18,
                 new Vector2(16, -12), new Vector2(500, 32), TextAnchor.UpperLeft);
             var resBody = CreateText(resolvePanel.transform, "ResolveBody", "", 13,
@@ -164,11 +164,18 @@ namespace ElonLifeSim.Unity.UI
 
             canvasGo.AddComponent<HudLocationLabel>().Init(locLabel);
 
+            var hud = canvasGo.AddComponent<HudPanelController>();
+            hud.Bind(topBar, inboxPanel, travelPanel, coPanel, resolvePanel, dialoguePanel);
+
             inboxPanel.SetActive(false);
             travelPanel.SetActive(false);
             coPanel.SetActive(false);
             resolvePanel.SetActive(false);
             dialoguePanel.SetActive(false);
+            topBar.SetActive(true);
+            topBar.transform.SetAsLastSibling();
+
+            DontDestroyOnLoad(canvasGo);
 
             Debug.Log("[ElonLifeSim] PLACEHOLDER HUD built (Inbox/Map/Companies/Story/Resolve).");
         }

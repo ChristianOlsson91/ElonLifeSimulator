@@ -62,6 +62,7 @@ namespace ElonLifeSim.Core.Tests
             Run("ElonEra_SwapOnTravelLocationChanged", TestElonEraSwapOnTravelLocationChanged);
             Run("DebugJump_F1F2F3_MapsAndUnlockTravelWithoutAct1", TestDebugJumpF1F2F3);
             Run("DebugJump_F4F5_MissingAsPlaceOnCurrentRegistry", TestDebugJumpF4F5Missing);
+            Run("HudExclusivity_ToggleOpenCloseAndDialogueClears", TestHudPanelExclusivity);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -680,6 +681,52 @@ namespace ElonLifeSim.Core.Tests
             Assert(!r5.Moved, "F5 did not travel");
             Assert(travel.CurrentLocationId == PrototypeContent.LocationPretoria, "F5 stayed");
             Assert(r5.Log.Contains("era=05_mars") && r5.Log.Contains("missing as place"), "F5 log: " + r5.Log);
+        }
+
+        private static void TestHudPanelExclusivity()
+        {
+            var open = HudLargePanel.None;
+
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Inbox);
+            Assert(HudPanelExclusivity.IsOpen(open, HudLargePanel.Inbox), "open Inbox");
+            Assert(!HudPanelExclusivity.IsMap(open), "map closed when inbox open");
+            Assert(!HudPanelExclusivity.IsCompanies(open), "companies closed");
+            Assert(!HudPanelExclusivity.IsResolve(open), "resolve closed");
+
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Map);
+            Assert(HudPanelExclusivity.IsMap(open), "open Map closes Inbox");
+            Assert(!HudPanelExclusivity.IsInbox(open), "inbox closed after map");
+            Assert(!HudPanelExclusivity.IsCompanies(open), "companies still closed");
+
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Inbox);
+            Assert(HudPanelExclusivity.IsInbox(open), "inbox from map");
+
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Inbox);
+            Assert(open == HudLargePanel.None, "toggle Inbox again closes");
+            Assert(!HudPanelExclusivity.IsInbox(open), "inbox closed");
+
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Companies);
+            Assert(HudPanelExclusivity.IsCompanies(open), "companies open");
+            open = HudPanelExclusivity.Close();
+            Assert(open == HudLargePanel.None, "Close → none");
+
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Companies);
+            Assert(HudPanelExclusivity.IsCompanies(open), "open Companies");
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Resolve);
+            Assert(HudPanelExclusivity.IsResolve(open), "open Resolve replaces Companies");
+            Assert(!HudPanelExclusivity.IsCompanies(open), "companies closed by resolve");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Inbox);
+            open = HudPanelExclusivity.OnDialogueOrStory(open);
+            Assert(open == HudLargePanel.None, "dialogue closes Inbox");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Map);
+            open = HudPanelExclusivity.OnDialogueOrStory(open);
+            Assert(open == HudLargePanel.None, "story closes Map");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Companies);
+            open = HudPanelExclusivity.OnDialogueOrStory(open);
+            Assert(open == HudLargePanel.None, "dialogue closes Companies");
         }
     }
 }

@@ -73,6 +73,7 @@ namespace ElonLifeSim.Unity.UI
                 return;
             }
 
+            HudPanelController.Find()?.PrepareForDialogueOrStory();
             _playing = true;
             dialogueUi.Play(dialogue, onComplete: () =>
             {
