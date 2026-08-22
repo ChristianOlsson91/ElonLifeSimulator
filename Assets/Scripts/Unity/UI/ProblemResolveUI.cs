@@ -98,25 +98,21 @@ namespace ElonLifeSim.Unity.UI
                 go.transform.SetParent(choicesRoot, false);
                 var rt = go.GetComponent<RectTransform>();
                 rt.sizeDelta = new Vector2(520, 40);
-                go.GetComponent<Image>().color = new Color(0.18f, 0.28f, 0.22f, 0.95f);
-
+                var img = go.GetComponent<Image>();
+                var btn = go.GetComponent<Button>();
                 var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
                 labelGo.transform.SetParent(go.transform, false);
                 var label = labelGo.GetComponent<Text>();
-                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                if (label.font == null)
-                    label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 label.text = choice.Text;
-                label.color = Color.white;
-                label.fontSize = 13;
                 label.alignment = TextAnchor.MiddleLeft;
                 var lrt = labelGo.GetComponent<RectTransform>();
                 lrt.anchorMin = Vector2.zero;
                 lrt.anchorMax = Vector2.one;
                 lrt.offsetMin = new Vector2(8, 2);
                 lrt.offsetMax = new Vector2(-8, -2);
+                UiTheme.StyleChoiceButton(img, btn, label);
 
-                go.GetComponent<Button>().onClick.AddListener(() => OnChoose(index));
+                btn.onClick.AddListener(() => OnChoose(index));
             }
         }
 

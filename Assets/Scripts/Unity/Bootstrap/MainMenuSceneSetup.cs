@@ -1,12 +1,13 @@
+using ElonLifeSim.Core.Content;
 using ElonLifeSim.Unity.Controllers;
+using ElonLifeSim.Unity.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ElonLifeSim.Unity.Bootstrap
 {
     /// <summary>
-    /// Builds a playable Main Menu at runtime if the scene is empty/minimal.
-    /// PLACEHOLDER UI. Safe to call multiple times (idempotent).
+    /// Builds the main menu at runtime if the scene is empty/minimal. Idempotent.
     /// </summary>
     public sealed class MainMenuSceneSetup : MonoBehaviour
     {
@@ -19,13 +20,12 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void Start()
         {
-            // Second chance if Awake order was wrong.
             EnsureBuilt();
         }
 
         public void EnsureBuilt()
         {
-            EnsureCamera(new Color(0.08f, 0.1f, 0.16f, 1f));
+            EnsureCamera(UiTheme.ScreenBackground);
 
             if (FindFirstObjectByType<MainMenuController>() != null &&
                 FindFirstObjectByType<Canvas>() != null)
@@ -43,51 +43,81 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void BuildMenu()
         {
-            EnsureCamera(new Color(0.08f, 0.1f, 0.16f, 1f));
+            EnsureCamera(UiTheme.ScreenBackground);
 
-            var canvasGo = new GameObject("MainMenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            var canvas = canvasGo.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 100;
-            var scaler = canvasGo.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            var canvasGo = UiTheme.CreateCanvas("MainMenuCanvas", 100);
 
             if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
             {
                 var es = new GameObject("EventSystem",
                     typeof(UnityEngine.EventSystems.EventSystem));
-                // Support both old and new input backends.
                 es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
             }
 
-            // Full-screen panel so Game view is never empty solid blue.
-            var bg = new GameObject("MenuBackground", typeof(RectTransform), typeof(Image));
-            bg.transform.SetParent(canvasGo.transform, false);
-            var bgRt = bg.GetComponent<RectTransform>();
-            bgRt.anchorMin = Vector2.zero;
-            bgRt.anchorMax = Vector2.one;
-            bgRt.offsetMin = Vector2.zero;
-            bgRt.offsetMax = Vector2.zero;
-            bg.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.18f, 1f);
-            bg.GetComponent<Image>().raycastTarget = false;
+            UiTheme.CreateFullBleed(canvasGo.transform, "MenuBackground", UiTheme.ScreenBackground);
 
-            CreateText(canvasGo.transform, "Title", "Elon: The Life Simulator", 36,
-                new Vector2(0, 120), new Vector2(900, 60));
-            CreateText(canvasGo.transform, "Subtitle",
-                "2D pixel narrative life-sim · Prototype\nRespectful · Inspiring · Slightly humorous",
-                16, new Vector2(0, 50), new Vector2(900, 60));
+            var accent = new GameObject("MenuAccent", typeof(RectTransform), typeof(Image));
+            accent.transform.SetParent(canvasGo.transform, false);
+            var accentRt = accent.GetComponent<RectTransform>();
+            accentRt.anchorMin = new Vector2(0f, 0f);
+            accentRt.anchorMax = new Vector2(0f, 1f);
+            accentRt.pivot = new Vector2(0f, 0.5f);
+            accentRt.sizeDelta = new Vector2(4f, 0f);
+            accentRt.anchoredPosition = Vector2.zero;
+            accent.GetComponent<Image>().color = UiTheme.Primary;
+            accent.GetComponent<Image>().raycastTarget = false;
 
-            CreateButton(canvasGo.transform, "NewGameButton", "New Game", new Vector2(0, -20), new Vector2(220, 48));
-            CreateButton(canvasGo.transform, "QuitButton", "Quit", new Vector2(0, -90), new Vector2(220, 48));
+            var topLine = new GameObject("MenuTopLine", typeof(RectTransform), typeof(Image));
+            topLine.transform.SetParent(canvasGo.transform, false);
+            var topRt = topLine.GetComponent<RectTransform>();
+            topRt.anchorMin = new Vector2(0f, 1f);
+            topRt.anchorMax = new Vector2(1f, 1f);
+            topRt.pivot = new Vector2(0.5f, 1f);
+            topRt.sizeDelta = new Vector2(0f, 2f);
+            topRt.anchoredPosition = Vector2.zero;
+            topLine.GetComponent<Image>().color = UiTheme.Primary;
+            topLine.GetComponent<Image>().raycastTarget = false;
 
-            var note = CreateText(canvasGo.transform, "PlaceholderNote",
-                "[PLACEHOLDER UI — replace with pixel art main menu]",
-                12, new Vector2(0, -200), new Vector2(700, 30));
-            note.color = new Color(1f, 0.85f, 0.4f, 0.9f);
+            var title = UiTheme.CreateCenteredText(canvasGo.transform, "Title", UiStyleTokens.GameTitle,
+                UiStyleTokens.TitleFontSize, new Vector2(0f, 110f), new Vector2(980f, 64f));
+            title.color = UiTheme.Title;
+
+            var subtitle = UiTheme.CreateCenteredText(canvasGo.transform, "Subtitle", UiStyleTokens.GameSubtitle,
+                UiStyleTokens.SubtitleFontSize, new Vector2(0f, 52f), new Vector2(720f, 32f));
+            subtitle.color = UiTheme.Muted;
+
+            var primaryW = 280f;
+            UiTheme.CreateButton(
+                canvasGo.transform,
+                "NewGameButton",
+                "New Game",
+                new Vector2(0f, -16f),
+                new Vector2(primaryW, UiStyleTokens.PrimaryButtonHeight),
+                primary: true,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f));
+
+            UiTheme.CreateButton(
+                canvasGo.transform,
+                "QuitButton",
+                "Quit",
+                new Vector2(0f, -16f - UiStyleTokens.PrimaryButtonHeight - UiStyleTokens.ButtonGap - 4),
+                new Vector2(primaryW, UiStyleTokens.SecondaryButtonHeight),
+                primary: false,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f));
+
+            var footer = UiTheme.CreateCenteredText(canvasGo.transform, "Footer", UiStyleTokens.FooterLabel,
+                UiStyleTokens.CaptionFontSize, Vector2.zero, new Vector2(480f, 24f));
+            footer.color = new Color(UiStyleTokens.MutedR, UiStyleTokens.MutedG, UiStyleTokens.MutedB, 0.7f);
+            var footerRt = footer.rectTransform;
+            footerRt.anchorMin = new Vector2(0.5f, 0f);
+            footerRt.anchorMax = new Vector2(0.5f, 0f);
+            footerRt.pivot = new Vector2(0.5f, 0f);
+            footerRt.anchoredPosition = new Vector2(0f, 22f);
 
             canvasGo.AddComponent<MainMenuController>();
-            Debug.Log("[ElonLifeSim] Main menu PLACEHOLDER UI ready.");
+            Debug.Log("[ElonLifeSim] Main menu ready.");
         }
 
         private static void EnsureCamera(Color background)
@@ -108,58 +138,6 @@ namespace ElonLifeSim.Unity.Bootstrap
             cam.backgroundColor = background;
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.enabled = true;
-        }
-
-        private static Font GetUiFont()
-        {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (font == null)
-                font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            if (font == null)
-                font = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Arial", "Helvetica" }, 16);
-            return font;
-        }
-
-        private static Text CreateText(Transform parent, string name, string content, int size,
-            Vector2 anchoredPos, Vector2 sizeDelta)
-        {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
-            go.transform.SetParent(parent, false);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = sizeDelta;
-            var t = go.GetComponent<Text>();
-            t.font = GetUiFont();
-            t.text = content;
-            t.fontSize = size;
-            t.color = Color.white;
-            t.alignment = TextAnchor.MiddleCenter;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
-            t.raycastTarget = false;
-            return t;
-        }
-
-        private static Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size)
-        {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = pos;
-            rt.sizeDelta = size;
-            go.GetComponent<Image>().color = new Color(0.18f, 0.45f, 0.85f, 1f);
-
-            var text = CreateText(go.transform, "Label", label, 18, Vector2.zero, size);
-            var trt = text.GetComponent<RectTransform>();
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.offsetMin = Vector2.zero;
-            trt.offsetMax = Vector2.zero;
-            return go.GetComponent<Button>();
         }
     }
 }

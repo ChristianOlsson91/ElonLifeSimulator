@@ -63,6 +63,7 @@ namespace ElonLifeSim.Core.Tests
             Run("DebugJump_F1F2F3_MapsAndUnlockTravelWithoutAct1", TestDebugJumpF1F2F3);
             Run("DebugJump_F4F5_MissingAsPlaceOnCurrentRegistry", TestDebugJumpF4F5Missing);
             Run("HudExclusivity_ToggleOpenCloseAndDialogueClears", TestHudPanelExclusivity);
+            Run("UiStyleTokens_HierarchyAndCopy", TestUiStyleTokens);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -727,6 +728,27 @@ namespace ElonLifeSim.Core.Tests
             open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Companies);
             open = HudPanelExclusivity.OnDialogueOrStory(open);
             Assert(open == HudLargePanel.None, "dialogue closes Companies");
+        }
+
+        private static void TestUiStyleTokens()
+        {
+            Assert(UiStyleTokens.TitleFontSize > UiStyleTokens.PrimaryButtonFontSize,
+                "title larger than primary button");
+            Assert(UiStyleTokens.PrimaryButtonFontSize > UiStyleTokens.CaptionFontSize,
+                "primary larger than caption");
+            Assert(UiStyleTokens.PrimaryButtonHeight > UiStyleTokens.SecondaryButtonHeight,
+                "primary button taller than secondary");
+            Assert(UiStyleTokens.PrimaryButtonHeight > UiStyleTokens.TopBarButtonHeight,
+                "primary taller than top-bar");
+            Assert(UiStyleTokens.PrimaryR != UiStyleTokens.SecondaryR ||
+                   UiStyleTokens.PrimaryG != UiStyleTokens.SecondaryG,
+                "primary color distinct from secondary");
+            Assert(UiStyleTokens.GameTitle.IndexOf("Elon", StringComparison.Ordinal) >= 0, "title names the game");
+            Assert(UiStyleTokens.GameSubtitle.IndexOf("Pretoria", StringComparison.Ordinal) >= 0, "subtitle pret");
+            Assert(UiStyleTokens.GameSubtitle.IndexOf("Mars", StringComparison.Ordinal) >= 0, "subtitle mars");
+            Assert(UiStyleTokens.TopBarHeight > UiStyleTokens.TopBarButtonHeight, "top bar fits buttons");
+            Assert(UiStyleTokens.ReferenceWidth == 1280 && UiStyleTokens.ReferenceHeight == 720,
+                "reference resolution");
         }
     }
 }

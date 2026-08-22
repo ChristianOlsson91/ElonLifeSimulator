@@ -7,8 +7,7 @@ using UnityEngine.UI;
 namespace ElonLifeSim.Unity.Controllers
 {
     /// <summary>
-    /// Main menu: New Game → bootstrap session → load South Africa start scene.
-    /// Wire buttons in the MainMenu scene (or use runtime UI builder).
+    /// Main menu: New Game starts a session and loads Pretoria. Esc matches Quit.
     /// </summary>
     public sealed class MainMenuController : MonoBehaviour
     {
@@ -19,16 +18,19 @@ namespace ElonLifeSim.Unity.Controllers
 
         private void Start()
         {
-            // Runtime-friendly: find buttons if not wired in inspector.
             if (newGameButton == null)
                 newGameButton = FindButtonByName("NewGameButton");
             if (quitButton == null)
                 quitButton = FindButtonByName("QuitButton");
+            if (titleText == null)
+                titleText = FindTextByName("Title");
+            if (subtitleText == null)
+                subtitleText = FindTextByName("Subtitle");
 
             if (titleText != null)
-                titleText.text = "Elon: The Life Simulator";
+                titleText.text = UiStyleTokens.GameTitle;
             if (subtitleText != null)
-                subtitleText.text = "A respectful narrative life-sim · Prototype";
+                subtitleText.text = UiStyleTokens.GameSubtitle;
 
             if (newGameButton != null)
             {
@@ -41,6 +43,12 @@ namespace ElonLifeSim.Unity.Controllers
                 quitButton.onClick.RemoveAllListeners();
                 quitButton.onClick.AddListener(OnQuit);
             }
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                OnQuit();
         }
 
         public void OnNewGame()
@@ -69,6 +77,12 @@ namespace ElonLifeSim.Unity.Controllers
         {
             var t = GameObject.Find(name);
             return t != null ? t.GetComponent<Button>() : null;
+        }
+
+        private static Text FindTextByName(string name)
+        {
+            var t = GameObject.Find(name);
+            return t != null ? t.GetComponent<Text>() : null;
         }
     }
 }
