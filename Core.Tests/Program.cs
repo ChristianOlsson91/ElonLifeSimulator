@@ -471,6 +471,8 @@ namespace ElonLifeSim.Core.Tests
 
             var next = TravelMapSelection.SelectNext(unlocked, travel.CurrentLocationId, target);
             Assert(!string.IsNullOrEmpty(next), "next target");
+            var prev = TravelMapSelection.SelectPrevious(unlocked, travel.CurrentLocationId, next);
+            Assert(prev == target, "previous returns to prior target");
 
             // Free travel without a ticket
             Assert(travel.TravelTo(target), "free travel");
@@ -749,6 +751,8 @@ namespace ElonLifeSim.Core.Tests
             Assert(UiStyleTokens.TopBarHeight > UiStyleTokens.TopBarButtonHeight, "top bar fits buttons");
             Assert(UiStyleTokens.ReferenceWidth == 1280 && UiStyleTokens.ReferenceHeight == 720,
                 "reference resolution");
+            Assert(UiStyleTokens.DisclaimerLabel.IndexOf("Not affiliated", StringComparison.Ordinal) >= 0,
+                "disclaimer present");
         }
     }
 }

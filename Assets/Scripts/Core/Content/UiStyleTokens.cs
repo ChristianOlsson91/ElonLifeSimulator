@@ -9,6 +9,7 @@ namespace ElonLifeSim.Core.Content
         public const string GameTitle = "Elon: The Life Simulator";
         public const string GameSubtitle = "From Pretoria to Mars";
         public const string FooterLabel = "Community build";
+        public const string DisclaimerLabel = "Fan-made. Not affiliated with Elon Musk or his companies.";
 
         public const int TitleFontSize = 44;
         public const int SubtitleFontSize = 16;
@@ -31,6 +32,7 @@ namespace ElonLifeSim.Core.Content
         public const int CloseButtonHeight = 28;
         public const int ReferenceWidth = 1280;
         public const int ReferenceHeight = 720;
+        public const int SheetActionHeight = 32;
 
         public const float ScreenBgR = 0.055f;
         public const float ScreenBgG = 0.065f;
@@ -45,6 +47,11 @@ namespace ElonLifeSim.Core.Content
         public const float TopBarG = 0.050f;
         public const float TopBarB = 0.070f;
         public const float TopBarA = 0.94f;
+
+        public const float OverlayR = 0.02f;
+        public const float OverlayG = 0.025f;
+        public const float OverlayB = 0.04f;
+        public const float OverlayA = 0.55f;
 
         public const float PrimaryR = 0.14f;
         public const float PrimaryG = 0.46f;

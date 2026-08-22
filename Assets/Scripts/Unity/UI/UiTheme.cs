@@ -18,6 +18,9 @@ namespace ElonLifeSim.Unity.UI
         public static Color TopBarFill =>
             new Color(UiStyleTokens.TopBarR, UiStyleTokens.TopBarG, UiStyleTokens.TopBarB, UiStyleTokens.TopBarA);
 
+        public static Color OverlayFill =>
+            new Color(UiStyleTokens.OverlayR, UiStyleTokens.OverlayG, UiStyleTokens.OverlayB, UiStyleTokens.OverlayA);
+
         public static Color Primary =>
             new Color(UiStyleTokens.PrimaryR, UiStyleTokens.PrimaryG, UiStyleTokens.PrimaryB, 1f);
 
@@ -90,6 +93,33 @@ namespace ElonLifeSim.Unity.UI
             return img;
         }
 
+        public static GameObject CreateDimOverlay(Transform parent, string name)
+        {
+            var img = CreateFullBleed(parent, name, OverlayFill);
+            img.raycastTarget = true;
+            var btn = img.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.transition = Selectable.Transition.None;
+            return img.gameObject;
+        }
+
+        public static Image CreateHairline(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
+            Vector2 pivot, Vector2 size, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = pivot;
+            rt.sizeDelta = size;
+            rt.anchoredPosition = Vector2.zero;
+            var img = go.GetComponent<Image>();
+            img.color = color;
+            img.raycastTarget = false;
+            return img;
+        }
+
         public static GameObject CreatePanel(Transform parent, string name,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, Color color)
         {
@@ -110,12 +140,34 @@ namespace ElonLifeSim.Unity.UI
 
         public static Button AddSheetHeader(GameObject panel, string title, string closeName, out Text titleText)
         {
+            var accent = new GameObject("HeaderAccent", typeof(RectTransform), typeof(Image));
+            accent.transform.SetParent(panel.transform, false);
+            var aRt = accent.GetComponent<RectTransform>();
+            aRt.anchorMin = new Vector2(0, 0);
+            aRt.anchorMax = new Vector2(0, 1);
+            aRt.pivot = new Vector2(0, 0.5f);
+            aRt.sizeDelta = new Vector2(3f, 0);
+            aRt.anchoredPosition = Vector2.zero;
+            accent.GetComponent<Image>().color = Primary;
+            accent.GetComponent<Image>().raycastTarget = false;
+
             titleText = CreateText(panel.transform, "Title", title, UiStyleTokens.PanelTitleFontSize,
-                new Vector2(UiStyleTokens.PanelPadding, -10), new Vector2(420, 24), TextAnchor.MiddleLeft);
+                new Vector2(UiStyleTokens.PanelPadding + 4, -10), new Vector2(420, 24), TextAnchor.MiddleLeft);
             titleText.color = Title;
             titleText.GetComponent<RectTransform>().anchorMin = new Vector2(0, 1);
             titleText.GetComponent<RectTransform>().anchorMax = new Vector2(0, 1);
             titleText.GetComponent<RectTransform>().pivot = new Vector2(0, 1);
+
+            var rule = new GameObject("HeaderRule", typeof(RectTransform), typeof(Image));
+            rule.transform.SetParent(panel.transform, false);
+            var rRt = rule.GetComponent<RectTransform>();
+            rRt.anchorMin = new Vector2(0, 1);
+            rRt.anchorMax = new Vector2(1, 1);
+            rRt.pivot = new Vector2(0.5f, 1);
+            rRt.anchoredPosition = new Vector2(0, -UiStyleTokens.HeaderHeight + 2);
+            rRt.sizeDelta = new Vector2(-32, 1);
+            rule.GetComponent<Image>().color = new Color(Primary.r, Primary.g, Primary.b, 0.45f);
+            rule.GetComponent<Image>().raycastTarget = false;
 
             var close = CreateButton(
                 panel.transform,

@@ -5,13 +5,14 @@ namespace ElonLifeSim.Unity.Controllers
 {
     /// <summary>
     /// Top-down pixel character controller with idle / walk sprite animation.
+    /// Pixel-snaps after physics so SNES frames stay crisp while moving.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class PixelPlayerController : MonoBehaviour
     {
         [SerializeField] private float moveSpeed = 3.2f;
-        [SerializeField] private float walkFps = 8f;
+        [SerializeField] private float walkFps = 9f;
 
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
@@ -20,6 +21,7 @@ namespace ElonLifeSim.Unity.Controllers
         private Sprite _idle;
         private float _animTime;
         private int _frame;
+        private bool _wasMoving;
 
         public void SetSprites(Sprite idle, Sprite[] walkFrames)
         {
@@ -33,6 +35,7 @@ namespace ElonLifeSim.Unity.Controllers
                 _sr.sprite = _idle;
             _animTime = 0f;
             _frame = 0;
+            _wasMoving = false;
         }
 
         /// <summary>Load and apply idle + walk for a location (and optional reserved act hook).</summary>
@@ -50,6 +53,7 @@ namespace ElonLifeSim.Unity.Controllers
             _rb.gravityScale = 0f;
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            _rb.interpolation = RigidbodyInterpolation2D.None;
         }
 
         private void Update()
@@ -60,9 +64,11 @@ namespace ElonLifeSim.Unity.Controllers
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
-            _input = new Vector2(x, y).normalized;
+            _input = new Vector2(x, y);
+            if (_input.sqrMagnitude > 1f)
+                _input.Normalize();
 
-            if (_sr != null && _input.x != 0f)
+            if (_sr != null && Mathf.Abs(_input.x) > 0.01f)
                 _sr.flipX = _input.x < 0f;
 
             Animate();
@@ -71,6 +77,15 @@ namespace ElonLifeSim.Unity.Controllers
         private void FixedUpdate()
         {
             _rb.linearVelocity = _input * moveSpeed;
+        }
+
+        private void LateUpdate()
+        {
+            float ppu = ElonSpriteCatalog.PixelsPerUnit;
+            var p = _rb.position;
+            _rb.position = new Vector2(
+                Mathf.Round(p.x * ppu) / ppu,
+                Mathf.Round(p.y * ppu) / ppu);
         }
 
         private void Animate()
@@ -85,10 +100,19 @@ namespace ElonLifeSim.Unity.Controllers
                     _sr.sprite = _idle;
                 _animTime = 0f;
                 _frame = 0;
+                _wasMoving = false;
                 return;
             }
 
-            _animTime += Time.deltaTime * walkFps;
+            if (!_wasMoving)
+            {
+                _wasMoving = true;
+                _animTime = 0f;
+                _frame = 0;
+            }
+
+            float fps = _walkFrames.Length <= 2 ? 8f : walkFps;
+            _animTime += Time.deltaTime * fps;
             if (_animTime >= 1f)
             {
                 _animTime -= 1f;

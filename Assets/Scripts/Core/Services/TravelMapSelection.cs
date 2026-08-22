@@ -44,10 +44,38 @@ namespace ElonLifeSim.Core.Services
             string currentLocationId,
             string currentTargetId)
         {
+            return Step(unlocked, currentLocationId, currentTargetId, +1);
+        }
+
+        public static string SelectPrevious(
+            IReadOnlyList<GameLocation> unlocked,
+            string currentLocationId,
+            string currentTargetId)
+        {
+            return Step(unlocked, currentLocationId, currentTargetId, -1);
+        }
+
+        public static string SelectById(IReadOnlyList<GameLocation> unlocked, string locationId)
+        {
+            if (unlocked == null || string.IsNullOrEmpty(locationId))
+                return null;
+            for (int i = 0; i < unlocked.Count; i++)
+            {
+                if (unlocked[i].Id == locationId)
+                    return locationId;
+            }
+            return null;
+        }
+
+        private static string Step(
+            IReadOnlyList<GameLocation> unlocked,
+            string currentLocationId,
+            string currentTargetId,
+            int direction)
+        {
             if (unlocked == null || unlocked.Count == 0)
                 return null;
 
-            // Build list of travel candidates (unlocked, not "must skip only if single = current")
             var candidates = new List<string>();
             for (int i = 0; i < unlocked.Count; i++)
                 candidates.Add(unlocked[i].Id);
@@ -68,27 +96,15 @@ namespace ElonLifeSim.Core.Services
                 }
             }
 
-            // Advance until we find a different location or wrap fully
-            for (int step = 1; step <= candidates.Count; step++)
+            int count = candidates.Count;
+            for (int step = 1; step <= count; step++)
             {
-                int next = (idx + step) % candidates.Count;
-                if (candidates[next] != currentLocationId || candidates.Count == 1)
+                int next = ((idx + direction * step) % count + count) % count;
+                if (candidates[next] != currentLocationId || count == 1)
                     return candidates[next];
             }
 
             return candidates[0];
-        }
-
-        public static string SelectById(IReadOnlyList<GameLocation> unlocked, string locationId)
-        {
-            if (unlocked == null || string.IsNullOrEmpty(locationId))
-                return null;
-            for (int i = 0; i < unlocked.Count; i++)
-            {
-                if (unlocked[i].Id == locationId)
-                    return locationId;
-            }
-            return null;
         }
     }
 }

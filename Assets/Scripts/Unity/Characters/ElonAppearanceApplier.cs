@@ -13,6 +13,7 @@ namespace ElonLifeSim.Unity.Characters
     {
         public const string PlayerName = "Player_Elon";
         public const string PlaceholderName = "Player_YoungElon_PLACEHOLDER";
+        public const float TargetWorldHeight = 1.85f;
 
         /// <param name="actId">Reserved act hook; location mapping is current truth.</param>
         public static GameObject Apply(string locationId, string actId = null)
@@ -28,6 +29,7 @@ namespace ElonLifeSim.Unity.Characters
 
             controller.ApplyLocation(locationId, actId);
             FitHeight(player);
+            TuneRenderer(player);
 
             var dialogues = Object.FindObjectsByType<DialogueUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (int i = 0; i < dialogues.Length; i++)
@@ -74,19 +76,31 @@ namespace ElonLifeSim.Unity.Characters
             var player = new GameObject(PlayerName);
             player.transform.position = Vector3.zero;
             var sr = player.AddComponent<SpriteRenderer>();
-            sr.sortingOrder = 10;
+            sr.sortingOrder = 20;
+            sr.color = Color.white;
 
             var rb = player.AddComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.interpolation = RigidbodyInterpolation2D.None;
 
             player.AddComponent<PixelPlayerController>();
 
             var col = player.AddComponent<BoxCollider2D>();
-            col.size = new Vector2(0.7f, 1.1f);
-            col.offset = new Vector2(0f, 0.55f);
+            col.size = new Vector2(0.55f, 0.95f);
+            col.offset = new Vector2(0f, 0.48f);
             return player;
+        }
+
+        private static void TuneRenderer(GameObject player)
+        {
+            var sr = player.GetComponent<SpriteRenderer>();
+            if (sr == null)
+                return;
+            sr.sortingOrder = 20;
+            sr.color = Color.white;
+            sr.flipY = false;
         }
 
         private static void FitHeight(GameObject player)
@@ -94,9 +108,11 @@ namespace ElonLifeSim.Unity.Characters
             var sr = player.GetComponent<SpriteRenderer>();
             if (sr == null || sr.sprite == null)
                 return;
-            float h = sr.sprite.bounds.size.y;
+            float h = ElonSpriteCatalog.TightWorldHeight(sr.sprite);
+            if (h < 0.01f)
+                h = sr.sprite.bounds.size.y;
             if (h > 0.01f)
-                player.transform.localScale = Vector3.one * (1.8f / h);
+                player.transform.localScale = Vector3.one * (TargetWorldHeight / h);
         }
     }
 }

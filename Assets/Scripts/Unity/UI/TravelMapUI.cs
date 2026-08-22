@@ -177,18 +177,12 @@ namespace ElonLifeSim.Unity.UI
 
         public void SelectPreviousLocation()
         {
-            // Reuse SelectNext cycling by walking once per unlocked count-1 — simple: reverse via next
             if (_session == null)
                 _session = GameBootstrap.RequireSession();
             if (_session == null) return;
             var unlocked = _session.Travel.GetUnlockedLocations().ToList();
-            if (unlocked.Count == 0) return;
-            // N-1 next steps = previous
-            for (int i = 0; i < unlocked.Count - 1; i++)
-            {
-                _targetLocationId = TravelMapSelection.SelectNext(
-                    unlocked, _session.Travel.CurrentLocationId, _targetLocationId);
-            }
+            _targetLocationId = TravelMapSelection.SelectPrevious(
+                unlocked, _session.Travel.CurrentLocationId, _targetLocationId);
             Refresh();
         }
 
@@ -210,24 +204,40 @@ namespace ElonLifeSim.Unity.UI
 
             EnsureDefaultTarget();
 
+            var here = _session.Travel.CurrentLocation?.DisplayName ?? "Unknown";
             var sb = new StringBuilder();
-            sb.AppendLine("WORLD MAP  [Next Loc / Travel]");
-            sb.AppendLine($"Current: {_session.Travel.CurrentLocation?.DisplayName ?? "Unknown"}");
-            sb.AppendLine("----------------");
+            sb.AppendLine("You are in " + here);
+            sb.AppendLine();
             foreach (var loc in _session.Travel.GetAllLocations())
             {
                 var unlocked = _session.Travel.IsUnlocked(loc.Id);
-                var cur = loc.Id == _session.Travel.CurrentLocationId ? " [YOU]" : "";
-                var tgt = loc.Id == _targetLocationId ? " << SELECTED" : "";
-                var lockMark = unlocked ? "" : " [LOCKED]";
-                sb.AppendLine($"• {loc.DisplayName}{cur}{tgt}{lockMark}");
-                sb.AppendLine($"  {loc.Description}");
+                var mark = loc.Id == _targetLocationId ? "▸ " : "    ";
+                string tag;
+                if (loc.Id == _session.Travel.CurrentLocationId)
+                    tag = "You are here";
+                else if (!unlocked)
+                    tag = "Locked";
+                else if (loc.Id == _targetLocationId)
+                    tag = "Selected";
+                else
+                    tag = "";
+
+                sb.AppendLine($"{mark}{loc.DisplayName}" + (tag.Length > 0 ? "   ·  " + tag : ""));
+                sb.AppendLine($"      {loc.Description}");
+                sb.AppendLine();
             }
 
-            if (!string.IsNullOrEmpty(_targetLocationId))
-                sb.AppendLine($"\nReady to travel to: {_targetLocationId}");
+            if (!string.IsNullOrEmpty(_targetLocationId) &&
+                _targetLocationId != _session.Travel.CurrentLocationId)
+            {
+                var dest = _session.Travel.GetAllLocations()
+                    .FirstOrDefault(l => l.Id == _targetLocationId);
+                sb.AppendLine("Travel to " + (dest != null ? dest.DisplayName : _targetLocationId) + ".");
+            }
             else
-                sb.AppendLine("\nNo unlocked destination (or already at only location).");
+            {
+                sb.AppendLine("Choose a destination with Prev / Next.");
+            }
 
             listText.text = sb.ToString();
             if (travelButton != null)
@@ -235,7 +245,6 @@ namespace ElonLifeSim.Unity.UI
                 bool can = !string.IsNullOrEmpty(_targetLocationId) &&
                            _targetLocationId != _session.Travel.CurrentLocationId &&
                            _session.Travel.IsUnlocked(_targetLocationId);
-                // Ticket path may unlock on TravelToActiveTicketLocation.
                 if (!can && !string.IsNullOrEmpty(_targetLocationId) &&
                     !string.IsNullOrEmpty(_session.ActiveTicketId) &&
                     _session.Inbox.TryGet(_session.ActiveTicketId, out var t) &&
@@ -253,7 +262,6 @@ namespace ElonLifeSim.Unity.UI
             EnsureDefaultTarget();
             if (string.IsNullOrEmpty(_targetLocationId))
             {
-                Debug.LogWarning("[Travel] No target selected.");
                 Refresh();
                 return;
             }
@@ -273,14 +281,9 @@ namespace ElonLifeSim.Unity.UI
             }
 
             if (ok)
-            {
                 Hide();
-            }
             else
-            {
-                Debug.LogWarning("[Travel] Travel failed.");
                 Refresh();
-            }
         }
     }
 }

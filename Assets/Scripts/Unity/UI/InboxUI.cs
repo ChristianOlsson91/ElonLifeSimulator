@@ -197,23 +197,24 @@ namespace ElonLifeSim.Unity.UI
             if (_session == null) return;
 
             var tickets = _session.Inbox.ListTickets();
-            // Re-evaluate selection every refresh so Completed tickets do not stick.
             _selectedTicketId = InboxSelection.EnsureSelected(tickets, _selectedTicketId);
 
             var sb = new StringBuilder();
-            sb.AppendLine($"INBOX ({tickets.Count})  [Prev/Next to select]");
-            sb.AppendLine("----------------");
-
             if (tickets.Count == 0)
             {
-                sb.AppendLine("(empty)");
+                sb.AppendLine("Nothing waiting.");
+                sb.AppendLine();
+                sb.AppendLine("Follow the story, or found a company, and work will show up here.");
             }
             else
             {
+                sb.AppendLine(tickets.Count == 1 ? "1 item" : tickets.Count + " items");
+                sb.AppendLine();
                 foreach (var t in tickets)
                 {
-                    var mark = t.Id == _selectedTicketId ? ">" : " ";
-                    sb.AppendLine($"{mark} [{t.Status}] {t.Title} ({t.CompanyDisplayName})");
+                    var mark = t.Id == _selectedTicketId ? "▸ " : "    ";
+                    sb.AppendLine($"{mark}{StatusLabel(t.Status)}   {t.Title}");
+                    sb.AppendLine($"      {t.CompanyDisplayName}");
                 }
             }
 
@@ -229,21 +230,22 @@ namespace ElonLifeSim.Unity.UI
             if (_session == null || string.IsNullOrEmpty(_selectedTicketId) ||
                 !_session.Inbox.TryGet(_selectedTicketId, out var t))
             {
-                detailText.text = "Select a ticket (Next/Prev).";
+                detailText.text = ticketsHint();
                 if (acceptButton != null) acceptButton.interactable = false;
                 if (resolveButton != null) resolveButton.interactable = false;
                 return;
             }
 
             bool isProblem = _session.TryGetProblem(t.Id, out _);
+            var hint = isProblem
+                ? "Accept, travel if needed, then Resolve."
+                : "";
             detailText.text =
                 $"<b>{t.Title}</b>\n" +
-                $"Company: {t.CompanyDisplayName}\n" +
-                $"Location: {t.LocationDisplayName}\n" +
-                $"Difficulty: {t.Difficulty}/5\n" +
+                $"{t.CompanyDisplayName}  ·  {t.LocationDisplayName}  ·  {t.Difficulty}/5\n" +
                 $"Reward: {t.RewardDescription}\n" +
-                $"Status: {t.Status}\n" +
-                (isProblem ? "(Company problem — Accept, travel, then Resolve)\n\n" : "\n") +
+                $"Status: {StatusLabel(t.Status)}\n" +
+                (string.IsNullOrEmpty(hint) ? "\n" : hint + "\n\n") +
                 t.Description;
 
             if (acceptButton != null)
@@ -253,16 +255,33 @@ namespace ElonLifeSim.Unity.UI
                     (t.Status == TicketStatus.Accepted || t.Status == TicketStatus.Pending);
         }
 
+        private string ticketsHint()
+        {
+            return _session != null && _session.Inbox.ListTickets().Count > 0
+                ? "Use Prev / Next to choose an item."
+                : "";
+        }
+
+        private static string StatusLabel(TicketStatus status)
+        {
+            switch (status)
+            {
+                case TicketStatus.Pending: return "New";
+                case TicketStatus.Accepted: return "Accepted";
+                case TicketStatus.InProgress: return "In progress";
+                case TicketStatus.Completed: return "Done";
+                case TicketStatus.Failed: return "Failed";
+                default: return status.ToString();
+            }
+        }
+
         private void OnAccept()
         {
             if (_session == null || string.IsNullOrEmpty(_selectedTicketId))
                 return;
 
             if (!_session.AcceptTicket(_selectedTicketId))
-            {
-                Debug.LogWarning("[Inbox] Could not accept ticket.");
                 return;
-            }
 
             FindFirstObjectByType<TravelMapUI>()?.ShowForActiveTicket();
             Refresh();
@@ -279,8 +298,6 @@ namespace ElonLifeSim.Unity.UI
             var resolveUi = FindFirstObjectByType<ProblemResolveUI>();
             if (resolveUi != null)
                 resolveUi.ShowForTicket(_selectedTicketId);
-            else
-                Debug.LogWarning("[Inbox] ProblemResolveUI missing.");
 
             Refresh();
         }

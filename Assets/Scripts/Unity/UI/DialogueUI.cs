@@ -71,7 +71,6 @@ namespace ElonLifeSim.Unity.UI
 
             if (!_runner.Start(definition))
             {
-                Debug.LogWarning("[Dialogue] Failed to start dialogue.");
                 _onComplete?.Invoke();
                 return;
             }
@@ -161,8 +160,8 @@ namespace ElonLifeSim.Unity.UI
                 var lrt = labelGo.GetComponent<RectTransform>();
                 lrt.anchorMin = Vector2.zero;
                 lrt.anchorMax = Vector2.one;
-                lrt.offsetMin = Vector2.zero;
-                lrt.offsetMax = Vector2.zero;
+                lrt.offsetMin = new Vector2(8, 0);
+                lrt.offsetMax = new Vector2(-8, 0);
                 UiTheme.StyleChoiceButton(img, btn, label);
 
                 btn.onClick.AddListener(() => _runner.Choose(index));

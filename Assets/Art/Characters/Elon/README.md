@@ -47,7 +47,9 @@ Textures under Art and Resources should use:
 
 | Era | Walk source |
 |-----|-------------|
-| `04_modern` | Real walk pose from the pack (plus horizontal flips) |
-| `01_young_sa`, `02_young_adult_90s`, `03_early_2000s`, `05_mars` | Idle copies + one mirrored idle — pack has no walk sheet for these. Replace when walk sheets exist. |
+| `04_modern` | Real walk pose from the pack. Runtime drops the mirrored frames (facing is `flipX`). |
+| `01_young_sa`, `02_young_adult_90s`, `03_early_2000s`, `05_mars` | Pack has no walk sheet (idle copies + one mirrored idle). `ElonSpriteCatalog` synthesizes a 5-frame SNES stride from the idle likeness at runtime. Replace with real walk sheets when they exist. |
+
+Do **not** play the mirrored idle as a walk frame — that strobes the whole body. Facing is `SpriteRenderer.flipX` only.
 
 Modern also keeps talk / side extras from the 4-pose strip (`elon_modern_talk.png`, `elon_modern_side.png`).

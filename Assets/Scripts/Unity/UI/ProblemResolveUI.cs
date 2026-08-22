@@ -49,10 +49,7 @@ namespace ElonLifeSim.Unity.UI
                 _session = GameBootstrap.RequireSession();
             if (_session == null) return;
             if (!_session.TryGetProblem(ticketId, out var problem))
-            {
-                Debug.Log($"[ProblemResolve] Not a company problem: {ticketId}");
                 return;
-            }
 
             _problemId = ticketId;
             if (headerText != null)
@@ -62,8 +59,8 @@ namespace ElonLifeSim.Unity.UI
                 var sb = new StringBuilder();
                 sb.AppendLine(problem.Description);
                 sb.AppendLine();
-                sb.AppendLine($"Company: {problem.CompanyDisplayName} · Loc: {problem.LocationDisplayName}");
-                sb.AppendLine("Choose carefully — stats will change.");
+                sb.AppendLine($"{problem.CompanyDisplayName}  ·  {problem.LocationDisplayName}");
+                sb.AppendLine("Choose a path. Money, progress, and opinion will move.");
                 bodyText.text = sb.ToString();
             }
 
@@ -97,7 +94,7 @@ namespace ElonLifeSim.Unity.UI
                 var go = new GameObject($"ProblemChoice_{i}", typeof(RectTransform), typeof(Image), typeof(Button));
                 go.transform.SetParent(choicesRoot, false);
                 var rt = go.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(520, 40);
+                rt.sizeDelta = new Vector2(520, 44);
                 var img = go.GetComponent<Image>();
                 var btn = go.GetComponent<Button>();
                 var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
@@ -108,8 +105,8 @@ namespace ElonLifeSim.Unity.UI
                 var lrt = labelGo.GetComponent<RectTransform>();
                 lrt.anchorMin = Vector2.zero;
                 lrt.anchorMax = Vector2.one;
-                lrt.offsetMin = new Vector2(8, 2);
-                lrt.offsetMax = new Vector2(-8, -2);
+                lrt.offsetMin = new Vector2(12, 4);
+                lrt.offsetMax = new Vector2(-12, -4);
                 UiTheme.StyleChoiceButton(img, btn, label);
 
                 btn.onClick.AddListener(() => OnChoose(index));
@@ -129,17 +126,12 @@ namespace ElonLifeSim.Unity.UI
                 return;
 
             if (!_session.ResolveProblem(_problemId, index))
-            {
-                Debug.LogWarning("[ProblemResolve] Resolve failed.");
                 return;
-            }
 
-            Debug.Log($"[ProblemResolve] {_session.LastResolutionNarration}");
             if (bodyText != null)
                 bodyText.text = _session.LastResolutionNarration;
 
             FindFirstObjectByType<CompanyDashboardUI>()?.Refresh();
-            // InboxUI.Refresh re-runs InboxSelection.EnsureSelected so completed tickets do not stick.
             FindFirstObjectByType<InboxUI>()?.Refresh();
             ClearChoices();
         }

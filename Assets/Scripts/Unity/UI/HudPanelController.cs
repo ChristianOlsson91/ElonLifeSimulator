@@ -1,5 +1,6 @@
 using ElonLifeSim.Core.Services;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ElonLifeSim.Unity.UI
 {
@@ -15,6 +16,7 @@ namespace ElonLifeSim.Unity.UI
         [SerializeField] private GameObject companiesPanel;
         [SerializeField] private GameObject resolvePanel;
         [SerializeField] private GameObject dialoguePanel;
+        [SerializeField] private GameObject dimOverlay;
 
         private HudLargePanel _open = HudLargePanel.None;
 
@@ -31,7 +33,8 @@ namespace ElonLifeSim.Unity.UI
             GameObject map,
             GameObject companies,
             GameObject resolve,
-            GameObject dialogue)
+            GameObject dialogue,
+            GameObject overlay = null)
         {
             topBar = top;
             inboxPanel = inbox;
@@ -39,7 +42,9 @@ namespace ElonLifeSim.Unity.UI
             companiesPanel = companies;
             resolvePanel = resolve;
             dialoguePanel = dialogue;
+            dimOverlay = overlay;
             _open = HudLargePanel.None;
+            WireOverlay();
             Apply();
         }
 
@@ -84,12 +89,24 @@ namespace ElonLifeSim.Unity.UI
             Set(mapPanel, _open == HudLargePanel.Map);
             Set(companiesPanel, _open == HudLargePanel.Companies);
             Set(resolvePanel, _open == HudLargePanel.Resolve);
+            Set(dimOverlay, _open != HudLargePanel.None);
 
             if (topBar != null)
             {
                 topBar.SetActive(true);
                 topBar.transform.SetAsLastSibling();
             }
+        }
+
+        private void WireOverlay()
+        {
+            if (dimOverlay == null)
+                return;
+            var btn = dimOverlay.GetComponent<Button>();
+            if (btn == null)
+                return;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(Close);
         }
 
         private static void Set(GameObject go, bool on)

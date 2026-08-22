@@ -7,7 +7,6 @@ namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
     /// Drives Act 1 beat dialogues: play current beat → on complete → AdvanceAct1Beat → next or unlock notice.
-    /// PLACEHOLDER UI hooks via GameplayHudBuilder "Story" button.
     /// </summary>
     public sealed class Act1StoryUI : MonoBehaviour
     {
@@ -67,7 +66,6 @@ namespace ElonLifeSim.Unity.UI
             var dialogueUi = FindFirstObjectByType<DialogueUI>();
             if (dialogueUi == null)
             {
-                // Headless fallback: still advance progression for tests/debug.
                 _session.AdvanceAct1Beat();
                 RefreshStatus();
                 return;
@@ -82,14 +80,7 @@ namespace ElonLifeSim.Unity.UI
                 RefreshStatus();
 
                 if (_session.Act1.IsComplete)
-                {
-                    Debug.Log("[ElonLifeSim] Act 1 complete — Canada unlocked. Open Inbox / Map / Companies.");
                     FindFirstObjectByType<InboxUI>()?.Show();
-                }
-                else
-                {
-                    // Optional: auto-chain next beat prompt via status label only.
-                }
             });
         }
 
@@ -100,9 +91,9 @@ namespace ElonLifeSim.Unity.UI
             if (statusLabel == null || _session == null) return;
 
             if (_session.Act1.IsComplete)
-                statusLabel.text = "Act 1 complete · Canada unlocked · Found Zip2 when ready";
+                statusLabel.text = "Act 1 complete  ·  Canada unlocked  ·  Found Zip2 when ready";
             else
-                statusLabel.text = $"Act 1: {_session.Act1.GetBeatLocationLabel()} (Story)";
+                statusLabel.text = "Act 1  ·  " + _session.Act1.GetBeatLocationLabel();
         }
 
         /// <summary>Auto-start first beat once when entering Pretoria.</summary>

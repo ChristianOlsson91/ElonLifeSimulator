@@ -1,5 +1,4 @@
 using System.Text;
-using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Models;
 using ElonLifeSim.Core.Services;
 using ElonLifeSim.Unity.Bootstrap;
@@ -10,7 +9,6 @@ namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
     /// Shows company stats and Found Zip2 / Found X.com actions.
-    /// PLACEHOLDER panel built by GameplayHudBuilder.
     /// </summary>
     public sealed class CompanyDashboardUI : MonoBehaviour
     {
@@ -123,21 +121,22 @@ namespace ElonLifeSim.Unity.UI
             if (_session == null || bodyText == null) return;
 
             var sb = new StringBuilder();
-            sb.AppendLine("COMPANIES");
-            sb.AppendLine("----------------");
             foreach (var c in _session.Companies.ListCompanies())
             {
-                sb.AppendLine($"{c.DisplayName}  [{c.Status}]");
-                sb.AppendLine($"  Money: {c.Money}  Progress: {c.Progress}");
-                sb.AppendLine($"  Engineering: {c.EngineeringLevel}  Opinion: {c.PublicOpinion}");
-                sb.AppendLine($"  {c.Summary}");
+                sb.AppendLine($"<b>{c.DisplayName}</b>   ·  {StatusLabel(c.Status)}");
+                if (c.Status != CompanyStatus.NotFounded)
+                {
+                    sb.AppendLine($"Money {c.Money}   ·   Progress {c.Progress}");
+                    sb.AppendLine($"Engineering {c.EngineeringLevel}   ·   Opinion {c.PublicOpinion}");
+                }
+                sb.AppendLine(c.Summary);
                 sb.AppendLine();
             }
 
             if (_session.CanFoundZip2())
-                sb.AppendLine("Action: Found Zip2 is available.");
+                sb.AppendLine("Ready to found Zip2 — city directory software, the way the business actually started.");
             if (_session.CanFoundXCom())
-                sb.AppendLine("Action: Found X.com is available (after Zip2 sale).");
+                sb.AppendLine("Zip2 is sold. X.com can be founded next.");
 
             bodyText.text = sb.ToString();
 
@@ -147,12 +146,24 @@ namespace ElonLifeSim.Unity.UI
                 foundXComButton.interactable = _session.CanFoundXCom();
         }
 
+        private static string StatusLabel(CompanyStatus status)
+        {
+            switch (status)
+            {
+                case CompanyStatus.NotFounded: return "Not founded";
+                case CompanyStatus.Active: return "Active";
+                case CompanyStatus.Sold: return "Sold";
+                case CompanyStatus.Merged: return "Merged";
+                case CompanyStatus.Inactive: return "Inactive";
+                default: return status.ToString();
+            }
+        }
+
         private void OnFoundZip2()
         {
             if (_session == null) return;
             if (_session.FoundZip2())
             {
-                Debug.Log("[ElonLifeSim] Zip2 founded — Zip2 problems delivered to Inbox.");
                 FindFirstObjectByType<InboxUI>()?.Show();
                 Refresh();
             }
@@ -163,7 +174,6 @@ namespace ElonLifeSim.Unity.UI
             if (_session == null) return;
             if (_session.FoundXCom())
             {
-                Debug.Log("[ElonLifeSim] X.com founded — X.com problems delivered to Inbox.");
                 FindFirstObjectByType<InboxUI>()?.Show();
                 Refresh();
             }

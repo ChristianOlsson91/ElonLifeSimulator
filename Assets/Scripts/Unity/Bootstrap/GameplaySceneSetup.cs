@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ElonLifeSim.Unity.Bootstrap
 {
     /// <summary>
-    /// Runtime setup for location scenes: camera, placeholder floor, era Elon sprite, controllers.
+    /// Runtime setup for location scenes: camera, ground, era Elon sprite, controllers.
     /// </summary>
     public sealed class GameplaySceneSetup : MonoBehaviour
     {
@@ -66,29 +66,48 @@ namespace ElonLifeSim.Unity.Bootstrap
             }
 
             cam.orthographic = true;
-            cam.orthographicSize = 5f;
+            cam.orthographicSize = PixelOrthoSize();
             cam.backgroundColor = backgroundColor;
             cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.allowMSAA = false;
             cam.transform.position = new Vector3(0, 0, -10);
+        }
+
+        /// <summary>Integer screen-pixel zoom nearest the old 5-unit view.</summary>
+        internal static float PixelOrthoSize()
+        {
+            float ppu = ElonSpriteCatalog.PixelsPerUnit;
+            float height = Screen.height > 0 ? Screen.height : 720f;
+            float best = 5f;
+            float bestDelta = float.MaxValue;
+            for (int scale = 1; scale <= 8; scale++)
+            {
+                float ortho = height / (2f * ppu * scale);
+                float d = Mathf.Abs(ortho - 5f);
+                if (d < bestDelta)
+                {
+                    bestDelta = d;
+                    best = ortho;
+                }
+            }
+
+            return best;
         }
 
         private void SetupWorld()
         {
-            // PLACEHOLDER ground quad (sprite-like) via SpriteRenderer from a solid texture.
-            if (GameObject.Find("PlaceholderGround") != null) return;
+            var leftover = GameObject.Find("PLACEHOLDER_ART_MARKER");
+            if (leftover != null)
+                Destroy(leftover);
 
-            var ground = new GameObject("PlaceholderGround");
+            if (GameObject.Find("Ground") != null || GameObject.Find("PlaceholderGround") != null)
+                return;
+
+            var ground = new GameObject("Ground");
             var sr = ground.AddComponent<SpriteRenderer>();
             sr.sprite = CreateSolidSprite(groundColor, 64, 64);
             sr.sortingOrder = -10;
             ground.transform.localScale = new Vector3(16, 10, 1);
-
-            // Border label in world space (optional visual)
-            var marker = new GameObject("PLACEHOLDER_ART_MARKER");
-            var markerSr = marker.AddComponent<SpriteRenderer>();
-            markerSr.sprite = CreateSolidSprite(new Color(1f, 0.8f, 0.2f, 0.35f), 32, 8);
-            marker.transform.position = new Vector3(0, 4.2f, 0);
-            marker.transform.localScale = new Vector3(6, 0.4f, 1);
         }
 
         private void SetupPlayer()
@@ -101,9 +120,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             if (FindFirstObjectByType<LocationSceneController>() == null)
             {
                 var go = new GameObject("LocationSceneController");
-                var loc = go.AddComponent<LocationSceneController>();
-                // locationId set via public method if needed — use reflection-free approach:
-                // LocationSceneController reads serialized field; for runtime we add a helper.
+                go.AddComponent<LocationSceneController>();
                 go.AddComponent<LocationIdOverride>().locationId = locationId;
             }
 
@@ -130,15 +147,6 @@ namespace ElonLifeSim.Unity.Bootstrap
             var pixels = new Color[w * h];
             for (int i = 0; i < pixels.Length; i++)
                 pixels[i] = color;
-            // Simple face detail for player-sized sprites
-            if (w == 16 && h == 24)
-            {
-                for (int x = 5; x <= 6; x++)
-                {
-                    pixels[x + 16 * 16] = Color.black; // eyes row
-                    pixels[x + 9 + 16 * 16] = Color.black;
-                }
-            }
             tex.SetPixels(pixels);
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
@@ -154,7 +162,6 @@ namespace ElonLifeSim.Unity.Bootstrap
         {
             var loc = GetComponent<LocationSceneController>();
             if (loc == null || string.IsNullOrEmpty(locationId)) return;
-            // Use SendMessage-free serialized set via public API on controller.
             loc.SetLocationId(locationId);
         }
     }
