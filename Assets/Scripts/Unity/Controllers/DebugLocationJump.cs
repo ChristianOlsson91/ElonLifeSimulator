@@ -7,7 +7,8 @@ namespace ElonLifeSim.Unity.Controllers
 {
     /// <summary>
     /// Editor / development-build F1–F5 jumps: Unlock + TravelTo, then the existing
-    /// appearance refresh. Not present as a cheat menu in release players.
+    /// appearance refresh. On-screen era buttons share the same Jump path.
+    /// Not present as a cheat menu in release players.
     /// </summary>
     public sealed class DebugLocationJump : MonoBehaviour
     {
@@ -39,7 +40,7 @@ namespace ElonLifeSim.Unity.Controllers
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static void Jump(int functionKey)
+        public static void Jump(int functionKey)
         {
             var session = GameBootstrap.RequireSession();
             if (session == null)
@@ -57,6 +58,25 @@ namespace ElonLifeSim.Unity.Controllers
             // TravelTo no-ops when already there, so LocationChanged may not fire.
             if (!result.Moved && !string.IsNullOrEmpty(result.ToLocationId))
                 ElonAppearanceApplier.Apply(result.ToLocationId);
+        }
+
+        private static readonly string[] ButtonLabels = { "SA", "90s", "2000s", "Now", "Mars" };
+
+        private void OnGUI()
+        {
+            const float width = 72f;
+            const float height = 26f;
+            const float pad = 4f;
+            float x = 8f;
+            float y = 8f;
+            GUI.Label(new Rect(x, y, 120f, 18f), "era jump");
+            y += 20f;
+            for (int i = 0; i < ButtonLabels.Length; i++)
+            {
+                if (GUI.Button(new Rect(x, y, width, height), ButtonLabels[i]))
+                    Jump(i + 1);
+                y += height + pad;
+            }
         }
 #endif
     }
