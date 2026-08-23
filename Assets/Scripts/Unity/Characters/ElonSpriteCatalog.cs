@@ -7,11 +7,14 @@ namespace ElonLifeSim.Unity.Characters
     /// <summary>
     /// Loads Elon era sprites from Resources/Characters/Elon/.
     /// Magenta (#FF00FF) pixels become transparent for in-world sprites.
-    /// Walk cycles play distinct same-facing frames; facing is SpriteRenderer.flipX.
+    /// Authored walk_00..walk_03 play in file order; facing is SpriteRenderer.flipX.
+    /// DistinctSameFacing / SynthesizeSnesWalk are fallback only when an era has
+    /// no real cycle (0–1 unique frames).
     /// </summary>
     public static class ElonSpriteCatalog
     {
         public const string ResourcesRoot = ElonEraResolver.ResourcesRoot;
+        public const float PixelsPerUnit = 64f;
 
         /// <summary>Era folder names under Resources/Characters/Elon/. Delegates to Core.</summary>
         public static string EraFolderForLocation(string locationId, string actId = null)
@@ -35,10 +38,12 @@ namespace ElonLifeSim.Unity.Characters
         }
 
         /// <summary>
-        /// Walk frames in play order. Real stride poses are kept; idle copies and
-        /// horizontal flips are not treated as animation (flipX handles facing).
-        /// When two or more distinct same-facing frames exist they play as-is —
-        /// no synthesized fake stride.
+        /// Walk frames in play order. If authored walk_00..walk_03 (or more) loaded
+        /// successfully — 3+ frames, or 2+ that are not idle duplicates — they play
+        /// in file order. Opposite-leg strides are kept even when they look like a
+        /// horizontal mirror of idle (flipX still handles facing).
+        /// DistinctSameFacing / SynthesizeSnesWalk run only when an era has no real
+        /// cycle (0–1 unique frames), so fake mirrored-idle sheets still collapse.
         /// </summary>
         public static Sprite[] LoadWalkCycle(string locationId, string actId = null)
         {
@@ -51,15 +56,16 @@ namespace ElonLifeSim.Unity.Characters
             }
 
             var idle = LoadIdle(locationId, actId);
+            if (HasAuthoredWalkCycle(loaded, idle))
+                return loaded.ToArray();
+
             var playable = DistinctSameFacing(loaded, idle);
             if (playable.Count >= 2)
                 return playable.ToArray();
 
-            if (playable.Count == 1)
-                return playable.ToArray();
-
-            if (idle != null)
-                return new[] { idle };
+            var source = idle != null ? idle : (playable.Count > 0 ? playable[0] : null);
+            if (source != null)
+                return SynthesizeSnesWalk(source);
 
             return playable.Count > 0 ? playable.ToArray() : System.Array.Empty<Sprite>();
         }
@@ -84,11 +90,18 @@ namespace ElonLifeSim.Unity.Characters
             }
 
             var readable = MakeReadableMagentaKeyed(tex);
+            return SpriteFromKeyed(readable);
+        }
+
+        public static Sprite SpriteFromKeyed(Texture2D readable)
+        {
+            if (readable == null)
+                return null;
             return Sprite.Create(
                 readable,
                 new Rect(0, 0, readable.width, readable.height),
                 new Vector2(0.5f, 0f), // pivot feet
-                pixelsPerUnit: 64f,
+                PixelsPerUnit,
                 extrude: 0,
                 meshType: SpriteMeshType.FullRect);
         }
@@ -149,6 +162,30 @@ namespace ElonLifeSim.Unity.Characters
             return PixelMismatch(ta.GetPixels32(), tb.GetPixels32(), ta.width, ta.height, mirror: true) <= tolerance;
         }
 
+        /// <summary>
+        /// True when walk_00.. loaded a real cycle: 3+ frames, or 2+ that are not
+        /// idle copies. Opposite-leg poses that happen to mirror idle still count.
+        /// </summary>
+        private static bool HasAuthoredWalkCycle(List<Sprite> loaded, Sprite idle)
+        {
+            if (loaded == null || loaded.Count == 0)
+                return false;
+            if (loaded.Count >= 3)
+                return true;
+
+            int notIdleDup = 0;
+            for (int i = 0; i < loaded.Count; i++)
+            {
+                var s = loaded[i];
+                if (s == null)
+                    continue;
+                if (idle == null || !NearlySame(s, idle))
+                    notIdleDup++;
+            }
+
+            return notIdleDup >= 2;
+        }
+
         private static List<Sprite> DistinctSameFacing(List<Sprite> frames, Sprite idle)
         {
             var unique = new List<Sprite>();
@@ -177,6 +214,95 @@ namespace ElonLifeSim.Unity.Characters
             }
 
             return unique;
+        }
+
+        /// <summary>
+        /// 5-frame SNES stride from a still: contact, pass, plant, opposite pass, contact.
+        /// Fallback only — never used when authored walk_00.. frames form a real cycle.
+        /// </summary>
+        private static Sprite[] SynthesizeSnesWalk(Sprite idle)
+        {
+            var src = idle.texture;
+            if (src == null)
+                return new[] { idle };
+
+            if (!TryOpaqueBounds(src, out int minX, out int minY, out int maxX, out int maxY))
+                return new[] { idle };
+
+            int contentH = maxY - minY + 1;
+            int contentW = maxX - minX + 1;
+            int waist = minY + Mathf.Max(6, Mathf.RoundToInt(contentH * 0.42f));
+            int stride = Mathf.Max(6, Mathf.RoundToInt(contentW * 0.10f));
+            int bob = Mathf.Max(2, Mathf.RoundToInt(contentH * 0.018f));
+
+            return new[]
+            {
+                idle,
+                SpriteFromKeyed(ComposeStride(src, bodyDy: bob, legDx: stride, waistY: waist)),
+                SpriteFromKeyed(ComposeStride(src, bodyDy: -bob, legDx: 0, waistY: waist)),
+                SpriteFromKeyed(ComposeStride(src, bodyDy: bob, legDx: -stride, waistY: waist)),
+                idle
+            };
+        }
+
+        private static Texture2D ComposeStride(Texture2D src, int bodyDy, int legDx, int waistY)
+        {
+            int w = src.width;
+            int h = src.height;
+            var from = src.GetPixels32();
+            var to = new Color32[from.Length];
+            for (int i = 0; i < to.Length; i++)
+                to[i] = new Color32(0, 0, 0, 0);
+
+            for (int y = 0; y < h; y++)
+            {
+                int sdx = y <= waistY ? legDx : 0;
+                int sdy = bodyDy;
+                for (int x = 0; x < w; x++)
+                {
+                    var c = from[x + y * w];
+                    if (c.a == 0)
+                        continue;
+                    int nx = x + sdx;
+                    int ny = y + sdy;
+                    if (nx < 0 || nx >= w || ny < 0 || ny >= h)
+                        continue;
+                    to[nx + ny * w] = c;
+                }
+            }
+
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.SetPixels32(to);
+            tex.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            return tex;
+        }
+
+        private static bool TryOpaqueBounds(Texture2D tex, out int minX, out int minY, out int maxX, out int maxY)
+        {
+            minX = tex.width;
+            minY = tex.height;
+            maxX = -1;
+            maxY = -1;
+            var p = tex.GetPixels32();
+            int w = tex.width;
+            int h = tex.height;
+            for (int y = 0; y < h; y++)
+            {
+                int row = y * w;
+                for (int x = 0; x < w; x++)
+                {
+                    if (p[row + x].a <= 16)
+                        continue;
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            return maxX >= 0;
         }
 
         private static float PixelMismatch(Color32[] a, Color32[] b, int w, int h, bool mirror)

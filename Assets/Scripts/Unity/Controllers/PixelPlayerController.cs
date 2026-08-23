@@ -5,13 +5,14 @@ namespace ElonLifeSim.Unity.Controllers
 {
     /// <summary>
     /// Top-down pixel character controller with idle / walk sprite animation.
+    /// Pixel-snaps after physics so SNES frames stay crisp while moving.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class PixelPlayerController : MonoBehaviour
     {
-        [SerializeField] private float moveSpeed = 3.2f;
-        [SerializeField] private float walkFps = 8f;
+        [SerializeField] private float moveSpeed = 2.0f;
+        [SerializeField] private float walkFps = 12f;
 
         private Rigidbody2D _rb;
         private SpriteRenderer _sr;
@@ -20,6 +21,7 @@ namespace ElonLifeSim.Unity.Controllers
         private Sprite _idle;
         private float _animTime;
         private int _frame;
+        private bool _wasMoving;
 
         public void SetSprites(Sprite idle, Sprite[] walkFrames)
         {
@@ -33,6 +35,7 @@ namespace ElonLifeSim.Unity.Controllers
                 _sr.sprite = _idle;
             _animTime = 0f;
             _frame = 0;
+            _wasMoving = false;
         }
 
         /// <summary>Load and apply idle + walk for a location (and optional reserved act hook).</summary>
@@ -50,6 +53,7 @@ namespace ElonLifeSim.Unity.Controllers
             _rb.gravityScale = 0f;
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            _rb.interpolation = RigidbodyInterpolation2D.None;
         }
 
         private void Update()
@@ -73,6 +77,15 @@ namespace ElonLifeSim.Unity.Controllers
             _rb.linearVelocity = _input * moveSpeed;
         }
 
+        private void LateUpdate()
+        {
+            float ppu = ElonSpriteCatalog.PixelsPerUnit;
+            var p = _rb.position;
+            _rb.position = new Vector2(
+                Mathf.Round(p.x * ppu) / ppu,
+                Mathf.Round(p.y * ppu) / ppu);
+        }
+
         private void Animate()
         {
             if (_sr == null)
@@ -85,7 +98,17 @@ namespace ElonLifeSim.Unity.Controllers
                     _sr.sprite = _idle;
                 _animTime = 0f;
                 _frame = 0;
+                _wasMoving = false;
                 return;
+            }
+
+            if (!_wasMoving)
+            {
+                _wasMoving = true;
+                _animTime = 0f;
+                _frame = 0;
+                if (_walkFrames[_frame] != null)
+                    _sr.sprite = _walkFrames[_frame];
             }
 
             _animTime += Time.deltaTime * walkFps;

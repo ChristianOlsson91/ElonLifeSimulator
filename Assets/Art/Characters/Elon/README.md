@@ -30,7 +30,7 @@ Magenta is the only chroma-key. Do **not** key black or dark hair / shoes / clot
 ## Runtime
 
 - `ElonSpriteCatalog` loads textures from Resources and keys **magenta only** to alpha (Point filter, pivot at feet)
-- `LoadWalkCycle` plays distinct same-facing walk frames (no mirrored copies, no synthesized stride when real frames exist)
+- `LoadWalkCycle` plays authored walk_00..walk_03 in file order when 3+ frames (or 2+ non-idle) loaded; DistinctSameFacing / SynthesizeSnesWalk only if an era has no real cycle
 - `GameplaySceneSetup` spawns `Player_Elon` with that location's idle + walk cycle
 - `PixelPlayerController` animates walk while moving; facing is `SpriteRenderer.flipX`
 - Dialogue panel shows era portrait
