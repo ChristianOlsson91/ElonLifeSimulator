@@ -2,7 +2,7 @@ namespace ElonLifeSim.Core.Services
 {
     /// <summary>
     /// Which large HUD surface is open. At most one of these is visible.
-    /// Dialogue/story is not a large panel; it clears Inbox/Map/Companies (and Resolve).
+    /// Dialogue is not a large panel; it clears Menu, Inbox, Map, Companies, Story, and Resolve.
     /// </summary>
     public enum HudLargePanel
     {
@@ -10,13 +10,15 @@ namespace ElonLifeSim.Core.Services
         Inbox = 1,
         Map = 2,
         Companies = 3,
-        Resolve = 4
+        Resolve = 4,
+        Menu = 5,
+        Story = 6
     }
 
     /// <summary>
     /// Exclusive large-panel rules. Unity applies the result with SetActive.
     /// Toggle same panel closes it; opening another replaces it; Close clears;
-    /// dialogue/story closes Inbox, Map, and Companies (and Resolve so they do not cover the line).
+    /// dialogue/story-line closes every large sheet so they do not cover the line.
     /// </summary>
     public static class HudPanelExclusivity
     {
@@ -43,8 +45,7 @@ namespace ElonLifeSim.Core.Services
         }
 
         /// <summary>
-        /// Dialogue or Story is about to show: Inbox, Map, and Companies must not sit on top.
-        /// Resolve is also closed so a large sheet cannot cover the line.
+        /// Dialogue is about to show: no large sheet (including Menu and Story) may sit on top.
         /// </summary>
         public static HudLargePanel OnDialogueOrStory(HudLargePanel current)
         {
@@ -61,5 +62,7 @@ namespace ElonLifeSim.Core.Services
         public static bool IsMap(HudLargePanel current) => current == HudLargePanel.Map;
         public static bool IsCompanies(HudLargePanel current) => current == HudLargePanel.Companies;
         public static bool IsResolve(HudLargePanel current) => current == HudLargePanel.Resolve;
+        public static bool IsMenu(HudLargePanel current) => current == HudLargePanel.Menu;
+        public static bool IsStory(HudLargePanel current) => current == HudLargePanel.Story;
     }
 }

@@ -120,6 +120,18 @@ namespace ElonLifeSim.Unity.UI
             return img;
         }
 
+        public static GameObject CreateCenteredSheet(Transform parent, string name)
+        {
+            return CreatePanel(
+                parent,
+                name,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(-360f, -240f),
+                new Vector2(360f, 240f),
+                PanelFill);
+        }
+
         public static GameObject CreatePanel(Transform parent, string name,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax, Color color)
         {

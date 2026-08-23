@@ -1,4 +1,5 @@
 using ElonLifeSim.Unity.Characters;
+using ElonLifeSim.Unity.UI;
 using UnityEngine;
 
 namespace ElonLifeSim.Unity.Controllers
@@ -58,6 +59,14 @@ namespace ElonLifeSim.Unity.Controllers
 
         private void Update()
         {
+            var hud = HudPanelController.Find();
+            if (hud != null && hud.HasOpenPanel)
+            {
+                _input = Vector2.zero;
+                Animate();
+                return;
+            }
+
             float x = 0f;
             float y = 0f;
             if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;

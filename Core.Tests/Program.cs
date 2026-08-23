@@ -63,6 +63,7 @@ namespace ElonLifeSim.Core.Tests
             Run("DebugJump_F1F2F3_MapsAndUnlockTravelWithoutAct1", TestDebugJumpF1F2F3);
             Run("DebugJump_F4F5_MissingAsPlaceOnCurrentRegistry", TestDebugJumpF4F5Missing);
             Run("HudExclusivity_ToggleOpenCloseAndDialogueClears", TestHudPanelExclusivity);
+            Run("HudExclusivity_MenuAndStory", TestHudPanelMenuAndStory);
             Run("UiStyleTokens_HierarchyAndCopy", TestUiStyleTokens);
 
             Console.WriteLine();
@@ -730,6 +731,42 @@ namespace ElonLifeSim.Core.Tests
             open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Companies);
             open = HudPanelExclusivity.OnDialogueOrStory(open);
             Assert(open == HudLargePanel.None, "dialogue closes Companies");
+        }
+
+        private static void TestHudPanelMenuAndStory()
+        {
+            var open = HudLargePanel.None;
+
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Menu);
+            Assert(HudPanelExclusivity.IsMenu(open), "menu open");
+            Assert(!HudPanelExclusivity.IsInbox(open), "inbox closed while menu open");
+            Assert(!HudPanelExclusivity.IsStory(open), "story closed while menu open");
+
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Inbox);
+            Assert(HudPanelExclusivity.IsInbox(open), "opening Inbox from Menu replaces Menu");
+            Assert(!HudPanelExclusivity.IsMenu(open), "menu replaced by inbox");
+
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Menu);
+            open = HudPanelExclusivity.Open(open, HudLargePanel.Story);
+            Assert(HudPanelExclusivity.IsStory(open), "opening Story from Menu replaces Menu");
+            Assert(!HudPanelExclusivity.IsMenu(open), "menu replaced by story");
+
+            open = HudPanelExclusivity.Toggle(HudLargePanel.None, HudLargePanel.Menu);
+            Assert(HudPanelExclusivity.IsMenu(open), "toggle opens Menu");
+            open = HudPanelExclusivity.Toggle(open, HudLargePanel.Menu);
+            Assert(open == HudLargePanel.None, "toggle Menu closes");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Menu);
+            open = HudPanelExclusivity.OnDialogueOrStory(open);
+            Assert(open == HudLargePanel.None, "dialogue clears Menu");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.None, HudLargePanel.Story);
+            open = HudPanelExclusivity.OnDialogueOrStory(open);
+            Assert(open == HudLargePanel.None, "dialogue clears Story");
+
+            open = HudPanelExclusivity.Open(HudLargePanel.Inbox, HudLargePanel.Story);
+            Assert(HudPanelExclusivity.IsStory(open), "story replaces inbox");
+            Assert(!HudPanelExclusivity.IsInbox(open), "inbox closed by story");
         }
 
         private static void TestUiStyleTokens()

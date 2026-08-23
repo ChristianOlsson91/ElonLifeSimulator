@@ -127,7 +127,7 @@ namespace ElonLifeSim.Unity.UI
             var hud = HudPanelController.Find();
             if (hud != null)
             {
-                hud.CloseIf(HudLargePanel.Map);
+                hud.Open(HudLargePanel.Menu);
                 return;
             }
 
@@ -281,7 +281,13 @@ namespace ElonLifeSim.Unity.UI
             }
 
             if (ok)
-                Hide();
+            {
+                var hud = HudPanelController.Find();
+                if (hud != null)
+                    hud.Close();
+                else if (panelRoot != null)
+                    panelRoot.SetActive(false);
+            }
             else
                 Refresh();
         }

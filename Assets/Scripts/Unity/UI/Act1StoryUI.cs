@@ -6,21 +6,27 @@ using UnityEngine.UI;
 namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
-    /// Drives Act 1 beat dialogues: play current beat → on complete → AdvanceAct1Beat → next or unlock notice.
+    /// Drives Act 1 beat dialogues from the centered Story sheet:
+    /// Continue → PlayCurrentBeat → DialogueUI (bottom banner).
     /// </summary>
     public sealed class Act1StoryUI : MonoBehaviour
     {
-        [SerializeField] private Button storyButton;
+        [SerializeField] private Button continueButton;
+        [SerializeField] private Button closeButton;
         [SerializeField] private Text statusLabel;
+        [SerializeField] private Text topBarStatus;
 
         private GameSession _session;
         private bool _playing;
 
-        public void Bind(GameSession session, Button story, Text status)
+        public void Bind(GameSession session, Button continueBtn, Text sheetStatus,
+            Text topStatus = null, Button close = null)
         {
             _session = session;
-            storyButton = story;
-            statusLabel = status;
+            continueButton = continueBtn;
+            statusLabel = sheetStatus;
+            topBarStatus = topStatus;
+            closeButton = close;
             Wire();
             RefreshStatus();
         }
@@ -35,11 +41,23 @@ namespace ElonLifeSim.Unity.UI
 
         private void Wire()
         {
-            if (storyButton != null)
+            if (continueButton != null)
             {
-                storyButton.onClick.RemoveAllListeners();
-                storyButton.onClick.AddListener(PlayCurrentBeat);
+                continueButton.onClick.RemoveAllListeners();
+                continueButton.onClick.AddListener(PlayCurrentBeat);
             }
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveAllListeners();
+                closeButton.onClick.AddListener(ReturnToMenu);
+            }
+        }
+
+        private static void ReturnToMenu()
+        {
+            var hud = HudPanelController.Find();
+            if (hud != null)
+                hud.Open(HudLargePanel.Menu);
         }
 
         public void PlayCurrentBeat()
@@ -88,12 +106,29 @@ namespace ElonLifeSim.Unity.UI
         {
             if (_session == null)
                 _session = GameBootstrap.RequireSession();
-            if (statusLabel == null || _session == null) return;
+            if (_session == null) return;
 
+            string sheet;
+            string bar;
             if (_session.Act1.IsComplete)
-                statusLabel.text = "Act 1 complete  ·  Canada unlocked  ·  Found Zip2 when ready";
+            {
+                sheet = "Act 1 complete  ·  Canada unlocked  ·  Found Zip2 when ready";
+                bar = "Act 1 complete";
+            }
             else
-                statusLabel.text = "Act 1  ·  " + _session.Act1.GetBeatLocationLabel();
+            {
+                var beat = "Act 1  ·  " + _session.Act1.GetBeatLocationLabel();
+                sheet = beat;
+                bar = beat;
+            }
+
+            if (statusLabel != null)
+                statusLabel.text = sheet;
+            if (topBarStatus != null)
+                topBarStatus.text = bar;
+
+            if (continueButton != null)
+                continueButton.gameObject.SetActive(!_session.Act1.IsComplete);
         }
 
         /// <summary>Auto-start first beat once when entering Pretoria.</summary>

@@ -151,7 +151,7 @@ namespace ElonLifeSim.Unity.UI
             var hud = HudPanelController.Find();
             if (hud != null)
             {
-                hud.CloseIf(HudLargePanel.Inbox);
+                hud.Open(HudLargePanel.Menu);
                 return;
             }
 

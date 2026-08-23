@@ -1,4 +1,5 @@
 using ElonLifeSim.Core.Content;
+using ElonLifeSim.Core.Services;
 using ElonLifeSim.Unity.Bootstrap;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,7 @@ namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
     /// Builds the in-game HUD using <see cref="UiTheme"/> so it matches the main menu.
+    /// Large sheets open from the Esc menu and are centered on screen.
     /// </summary>
     public sealed class GameplayHudBuilder : MonoBehaviour
     {
@@ -42,22 +44,9 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0),
                 new Vector2(0, 2), UiTheme.Primary);
 
-            float bw = UiStyleTokens.TopBarButtonWidth;
-            float bh = UiStyleTokens.TopBarButtonHeight;
-            float gap = UiStyleTokens.ButtonGap;
-            float x = 16f;
-            float y = -12f;
-            var inboxToggle = UiTheme.CreateButton(topBar.transform, "InboxToggle", "Inbox",
-                new Vector2(x, y), new Vector2(bw, bh), false, new Vector2(0, 1), new Vector2(0, 1));
-            x += bw + gap;
-            var mapToggle = UiTheme.CreateButton(topBar.transform, "MapToggle", "Map",
-                new Vector2(x, y), new Vector2(bw, bh), false, new Vector2(0, 1), new Vector2(0, 1));
-            x += bw + gap;
-            var coToggle = UiTheme.CreateButton(topBar.transform, "CompaniesToggle", "Companies",
-                new Vector2(x, y), new Vector2(bw + 10, bh), false, new Vector2(0, 1), new Vector2(0, 1));
-            x += bw + 10 + gap;
-            var storyBtn = UiTheme.CreateButton(topBar.transform, "StoryButton", "Story",
-                new Vector2(x, y), new Vector2(bw, bh), false, new Vector2(0, 1), new Vector2(0, 1));
+            var escHint = UiTheme.CreateText(topBar.transform, "EscHint", "Esc · Menu",
+                UiStyleTokens.CaptionFontSize, new Vector2(16, -18), new Vector2(160, 20), TextAnchor.MiddleLeft);
+            escHint.color = UiTheme.Muted;
 
             var locLabel = UiTheme.CreateText(topBar.transform, "LocationLabel", "Location",
                 UiStyleTokens.TopBarLabelFontSize, new Vector2(-16, -10), new Vector2(420, 22), TextAnchor.MiddleRight);
@@ -72,12 +61,7 @@ namespace ElonLifeSim.Unity.UI
             storyStatus.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
             storyStatus.GetComponent<RectTransform>().pivot = new Vector2(1, 1);
 
-            float topClear = -barH;
-            float pad = 20f;
-
-            var inboxPanel = UiTheme.CreatePanel(canvasGo.transform, "InboxPanel",
-                new Vector2(0, 0), new Vector2(0.40f, 1f),
-                new Vector2(pad, pad), new Vector2(-8, topClear), UiTheme.PanelFill);
+            var inboxPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "InboxPanel");
             UiTheme.AddSheetHeader(inboxPanel, "Inbox", "InboxClose", out _);
             var inboxList = UiTheme.CreateText(inboxPanel.transform, "InboxList", "",
                 UiStyleTokens.BodyFontSize, new Vector2(16, -48), new Vector2(-32, 160), TextAnchor.UpperLeft);
@@ -98,9 +82,7 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(308, 14), new Vector2(64, 32), false);
             var inboxClose = inboxPanel.transform.Find("InboxClose").GetComponent<Button>();
 
-            var travelPanel = UiTheme.CreatePanel(canvasGo.transform, "TravelPanel",
-                new Vector2(0.42f, 0), new Vector2(1, 1),
-                new Vector2(8, pad), new Vector2(-pad, topClear), UiTheme.PanelFill);
+            var travelPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "TravelPanel");
             UiTheme.AddSheetHeader(travelPanel, "Map", "TravelClose", out _);
             var travelList = UiTheme.CreateText(travelPanel.transform, "TravelList", "",
                 UiStyleTokens.BodyFontSize, new Vector2(16, -48), new Vector2(-32, 200), TextAnchor.UpperLeft);
@@ -114,9 +96,7 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(236, 14), new Vector2(80, 32), false);
             var travelClose = travelPanel.transform.Find("TravelClose").GetComponent<Button>();
 
-            var coPanel = UiTheme.CreatePanel(canvasGo.transform, "CompaniesPanel",
-                new Vector2(0.16f, 0.10f), new Vector2(0.84f, 1f),
-                new Vector2(0, 16), new Vector2(0, topClear), UiTheme.PanelFill);
+            var coPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "CompaniesPanel");
             UiTheme.AddSheetHeader(coPanel, "Companies", "CompaniesClose", out _);
             var coBody = UiTheme.CreateText(coPanel.transform, "CompaniesBody", "",
                 UiStyleTokens.BodyFontSize, new Vector2(16, -48), new Vector2(-32, 280), TextAnchor.UpperLeft);
@@ -128,9 +108,7 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(168, 14), new Vector2(140, 32), true);
             var coClose = coPanel.transform.Find("CompaniesClose").GetComponent<Button>();
 
-            var resolvePanel = UiTheme.CreatePanel(canvasGo.transform, "ProblemResolvePanel",
-                new Vector2(0.16f, 0.14f), new Vector2(0.84f, 0.90f),
-                new Vector2(0, 0), new Vector2(0, 0), UiTheme.PanelFill);
+            var resolvePanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "ProblemResolvePanel");
             UiTheme.AddSheetHeader(resolvePanel, "Problem", "ResolveClose", out var resHeader);
             var resBody = UiTheme.CreateText(resolvePanel.transform, "ResolveBody", "",
                 UiStyleTokens.BodyFontSize, new Vector2(16, -48), new Vector2(-32, 120), TextAnchor.UpperLeft);
@@ -146,6 +124,34 @@ namespace ElonLifeSim.Unity.UI
             rVlg.childControlHeight = false;
             rVlg.childForceExpandWidth = true;
             var resClose = resolvePanel.transform.Find("ResolveClose").GetComponent<Button>();
+
+            var menuPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "MenuPanel");
+            var menuClose = UiTheme.AddSheetHeader(menuPanel, "Menu", "MenuClose", out _);
+            var menuButtons = new GameObject("MenuButtons", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            menuButtons.transform.SetParent(menuPanel.transform, false);
+            UiTheme.Stretch(menuButtons.GetComponent<RectTransform>(), new Vector2(0.18f, 0.08f), new Vector2(0.82f, 0.82f),
+                new Vector2(0, 12), new Vector2(0, -12));
+            var mVlg = menuButtons.GetComponent<VerticalLayoutGroup>();
+            mVlg.spacing = 10;
+            mVlg.childAlignment = TextAnchor.MiddleCenter;
+            mVlg.childControlWidth = true;
+            mVlg.childControlHeight = false;
+            mVlg.childForceExpandWidth = true;
+            var menuInbox = CreateMenuButton(menuButtons.transform, "MenuInbox", "Inbox", true);
+            var menuMap = CreateMenuButton(menuButtons.transform, "MenuMap", "Map", true);
+            var menuCompanies = CreateMenuButton(menuButtons.transform, "MenuCompanies", "Companies", true);
+            var menuStory = CreateMenuButton(menuButtons.transform, "MenuStory", "Story", true);
+            var menuResume = CreateMenuButton(menuButtons.transform, "MenuResume", "Resume", false);
+
+            var storyPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "StoryPanel");
+            var storyClose = UiTheme.AddSheetHeader(storyPanel, "Story", "StoryClose", out _);
+            var storySheetStatus = UiTheme.CreateText(storyPanel.transform, "StorySheetStatus", "Act 1",
+                UiStyleTokens.BodyFontSize, new Vector2(20, -56), new Vector2(-40, 200), TextAnchor.UpperLeft);
+            storySheetStatus.color = UiTheme.Muted;
+            UiTheme.Stretch(storySheetStatus.rectTransform, new Vector2(0, 0.22f), new Vector2(1, 1),
+                new Vector2(20, 8), new Vector2(-20, -48));
+            var storyContinue = UiTheme.CreateButton(storyPanel.transform, "StoryContinue", "Continue",
+                new Vector2(20, 14), new Vector2(140, 32), true);
 
             var dialoguePanel = UiTheme.CreatePanel(canvasGo.transform, "DialoguePanel",
                 new Vector2(0.10f, 0), new Vector2(0.90f, 0.26f),
@@ -185,41 +191,65 @@ namespace ElonLifeSim.Unity.UI
             vlg.childControlWidth = true;
 
             var inboxUi = canvasGo.AddComponent<InboxUI>();
-            inboxUi.Bind(session, inboxPanel, inboxList, inboxDetail, acceptBtn, inboxClose, inboxToggle);
+            inboxUi.Bind(session, inboxPanel, inboxList, inboxDetail, acceptBtn, inboxClose, null);
             inboxUi.BindResolveButton(resolveBtn);
             inboxUi.BindNavButtons(prevTicket, nextTicket);
 
             var travelUi = canvasGo.AddComponent<TravelMapUI>();
-            travelUi.Bind(session, travelPanel, travelList, travelBtn, travelClose, mapToggle);
+            travelUi.Bind(session, travelPanel, travelList, travelBtn, travelClose, null);
             travelUi.BindLocationNav(prevLoc, nextLoc);
 
             var dialogueUi = canvasGo.AddComponent<DialogueUI>();
             dialogueUi.Bind(dialoguePanel, speaker, body, contBtn, choicesRoot.transform, portraitImg);
 
             var coUi = canvasGo.AddComponent<CompanyDashboardUI>();
-            coUi.Bind(session, coPanel, coBody, foundZip2, foundX, coClose, coToggle);
+            coUi.Bind(session, coPanel, coBody, foundZip2, foundX, coClose, null);
 
             var resolveUi = canvasGo.AddComponent<ProblemResolveUI>();
             resolveUi.Bind(resolvePanel, resHeader, resBody, resChoices.transform, resClose);
 
             var storyUi = canvasGo.AddComponent<Act1StoryUI>();
-            storyUi.Bind(session, storyBtn, storyStatus);
+            storyUi.Bind(session, storyContinue, storySheetStatus, storyStatus, storyClose);
 
             canvasGo.AddComponent<HudLocationLabel>().Init(locLabel);
 
             var hud = canvasGo.AddComponent<HudPanelController>();
-            hud.Bind(topBar, inboxPanel, travelPanel, coPanel, resolvePanel, dialoguePanel, overlay);
+            hud.Bind(topBar, inboxPanel, travelPanel, coPanel, resolvePanel, dialoguePanel, menuPanel, storyPanel, overlay);
+
+            menuInbox.onClick.AddListener(() => inboxUi.Show());
+            menuMap.onClick.AddListener(() => travelUi.Show());
+            menuCompanies.onClick.AddListener(() => coUi.Show());
+            menuStory.onClick.AddListener(() =>
+            {
+                hud.Open(HudLargePanel.Story);
+                storyUi.RefreshStatus();
+            });
+            menuResume.onClick.AddListener(() => hud.Close());
+            menuClose.onClick.AddListener(() => hud.Close());
 
             inboxPanel.SetActive(false);
             travelPanel.SetActive(false);
             coPanel.SetActive(false);
             resolvePanel.SetActive(false);
+            menuPanel.SetActive(false);
+            storyPanel.SetActive(false);
             dialoguePanel.SetActive(false);
             overlay.SetActive(false);
             topBar.SetActive(true);
-            topBar.transform.SetAsLastSibling();
 
             DontDestroyOnLoad(canvasGo);
+        }
+
+        private static Button CreateMenuButton(Transform parent, string name, string label, bool primary)
+        {
+            var btn = UiTheme.CreateButton(parent, name, label, Vector2.zero, new Vector2(0, 40), primary);
+            var rt = btn.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(0, 40);
+            var le = btn.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = 40;
+            le.minHeight = 40;
+            le.flexibleWidth = 1f;
+            return btn;
         }
 
         private static void EnsureEventSystem()
