@@ -12,6 +12,7 @@ namespace ElonLifeSim.Unity.UI
         private RectTransform _rt;
         private Outline _outline;
         private Vector3 _rest = Vector3.one;
+        private OutlineRest _restOutline;
 
         private void Awake()
         {
@@ -19,6 +20,16 @@ namespace ElonLifeSim.Unity.UI
             if (_rt != null)
                 _rest = _rt.localScale;
             _outline = GetComponent<Outline>();
+            if (_outline != null)
+            {
+                var c = _outline.effectColor;
+                var d = _outline.effectDistance;
+                _restOutline = new OutlineRest(c.r, c.g, c.b, c.a, d.x, d.y);
+            }
+            else
+            {
+                _restOutline = UiStyleTokens.SecondaryOutlineRest();
+            }
         }
 
         public void OnPointerEnter(PointerEventData eventData) => SetHot(true);
@@ -30,11 +41,11 @@ namespace ElonLifeSim.Unity.UI
         {
             if (_rt != null)
                 _rt.localScale = _rest * (hot ? UiStyleTokens.HoverScale : 1f);
-            if (_outline != null)
-            {
-                _outline.effectColor = hot ? UiTheme.Accent : UiTheme.Border;
-                _outline.effectDistance = hot ? new Vector2(2f, -2f) : new Vector2(1f, -1f);
-            }
+            if (_outline == null)
+                return;
+            var spec = UiStyleTokens.HoverOutline(hot, _restOutline);
+            _outline.effectColor = new Color(spec.R, spec.G, spec.B, spec.A);
+            _outline.effectDistance = new Vector2(spec.DistX, spec.DistY);
         }
     }
 }

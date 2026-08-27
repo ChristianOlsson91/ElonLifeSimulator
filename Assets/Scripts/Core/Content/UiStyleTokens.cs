@@ -54,6 +54,10 @@ namespace ElonLifeSim.Core.Content
         public const float PanelMotionSeconds = 0.15f;
         public const float PanelSlidePixels = 16f;
         public const float HoverScale = 1.035f;
+        public const float OutlineRestDistanceX = 1f;
+        public const float OutlineRestDistanceY = -1f;
+        public const float OutlineHotDistanceX = 2f;
+        public const float OutlineHotDistanceY = -2f;
 
         /// <summary>Unity FilterMode.Point. Pixel-art must never use bilinear (1).</summary>
         public const int SpriteFilterModePoint = 0;
@@ -161,6 +165,66 @@ namespace ElonLifeSim.Core.Content
         public static bool UsesPointFilter()
         {
             return SpriteFilterName == "Point" && SpriteFilterModePoint == 0 && SpriteFilterModeBilinear == 1;
+        }
+
+        public static OutlineRest PrimaryOutlineRest()
+        {
+            return new OutlineRest(AccentR, AccentG, AccentB, 1f, OutlineRestDistanceX, OutlineRestDistanceY);
+        }
+
+        public static OutlineRest SecondaryOutlineRest()
+        {
+            return new OutlineRest(PanelBorderR, PanelBorderG, PanelBorderB, PanelBorderA,
+                OutlineRestDistanceX, OutlineRestDistanceY);
+        }
+
+        /// <summary>Hot uses accent; cold restores the cached rest (primary keeps brass, not border).</summary>
+        public static OutlineRest HoverOutline(bool hot, OutlineRest rest)
+        {
+            if (!hot)
+                return rest;
+            return new OutlineRest(AccentR, AccentG, AccentB, 1f, OutlineHotDistanceX, OutlineHotDistanceY);
+        }
+
+        public static bool RestoresRestOutlineAfterHover()
+        {
+            var primary = PrimaryOutlineRest();
+            var secondary = SecondaryOutlineRest();
+            var primaryHot = HoverOutline(true, primary);
+            var primaryCold = HoverOutline(false, primary);
+            var secondaryCold = HoverOutline(false, secondary);
+            return primaryCold.SameAs(primary)
+                   && secondaryCold.SameAs(secondary)
+                   && primaryHot.R == AccentR
+                   && !primaryCold.SameAs(secondary);
+        }
+
+        private static float Abs(float v) => v < 0f ? -v : v;
+    }
+
+    public readonly struct OutlineRest
+    {
+        public readonly float R, G, B, A;
+        public readonly float DistX, DistY;
+
+        public OutlineRest(float r, float g, float b, float a, float distX, float distY)
+        {
+            R = r;
+            G = g;
+            B = b;
+            A = a;
+            DistX = distX;
+            DistY = distY;
+        }
+
+        public bool SameAs(OutlineRest other)
+        {
+            return Abs(R - other.R) < 0.001f
+                   && Abs(G - other.G) < 0.001f
+                   && Abs(B - other.B) < 0.001f
+                   && Abs(A - other.A) < 0.001f
+                   && Abs(DistX - other.DistX) < 0.001f
+                   && Abs(DistY - other.DistY) < 0.001f;
         }
 
         private static float Abs(float v) => v < 0f ? -v : v;

@@ -60,6 +60,11 @@ namespace ElonLifeSim.Core.Content
         public const string SoftSkyName = "SoftSky";
         public const float HorizonLineHeight = 0.07f;
         public const float VignetteAlpha = 0.42f;
+        /// <summary>Thin edge band in world units. 6wu slabs at ±7.4 covered half the frame.</summary>
+        public const float VignetteSideWidth = 1.5f;
+        public const float VignetteSideX = 8.15f;
+        public const float VignetteTopHeight = 2.2f;
+        public const float VignetteTopY = 4.4f;
 
         public static WorldBackdropPalette ForLocation(string locationId)
         {
@@ -133,6 +138,22 @@ namespace ElonLifeSim.Core.Content
         public static bool HasHorizonLine()
         {
             return HorizonLineName == "HorizonLine" && HorizonLineHeight > 0f && HorizonLineHeight < 0.2f;
+        }
+
+        public static bool VignetteIsTranslucent()
+        {
+            return VignetteAlpha > 0.15f && VignetteAlpha < 0.55f;
+        }
+
+        /// <summary>Inner |x| of a side slab. Old 6wu @ ±7.4 reached |x|=4.4 and hid the world.</summary>
+        public static float SideVignetteInnerAbsX => VignetteSideX - VignetteSideWidth * 0.5f;
+
+        public static bool SideVignetteLeavesWorldVisible()
+        {
+            return VignetteSideWidth > 0.4f
+                   && VignetteSideWidth <= 2.0f
+                   && SideVignetteInnerAbsX >= 6.5f
+                   && VignetteIsTranslucent();
         }
 
         private static float Abs(float v) => v < 0f ? -v : v;

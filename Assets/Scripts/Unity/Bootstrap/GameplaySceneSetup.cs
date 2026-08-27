@@ -130,24 +130,28 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private static void CreateVignette(Transform parent)
         {
-            float a = WorldBackdropTokens.VignetteAlpha;
             var dark = new Color(0.01f, 0.015f, 0.03f, 1f);
-            CreateBand(parent, WorldBackdropTokens.VignetteName + "Top", dark, 4.4f, 28f, 2.2f, 8);
-            CreateBand(parent, WorldBackdropTokens.VignetteName + "Left", dark, 0.4f, 6f, 10f, 8);
-            CreateBand(parent, WorldBackdropTokens.VignetteName + "Right", dark, 0.4f, 6f, 10f, 8);
-            var left = parent.Find(WorldBackdropTokens.VignetteName + "Left");
-            if (left != null)
-                left.position = new Vector3(-7.4f, 0.4f, 0f);
-            var right = parent.Find(WorldBackdropTokens.VignetteName + "Right");
-            if (right != null)
-                right.position = new Vector3(7.4f, 0.4f, 0f);
-            var top = parent.Find(WorldBackdropTokens.VignetteName + "Top");
-            if (top != null)
-            {
-                var sr = top.GetComponent<SpriteRenderer>();
-                if (sr != null)
-                    sr.color = new Color(dark.r, dark.g, dark.b, a);
-            }
+            var tint = new Color(dark.r, dark.g, dark.b, WorldBackdropTokens.VignetteAlpha);
+            float sideW = WorldBackdropTokens.VignetteSideWidth;
+            float sideX = WorldBackdropTokens.VignetteSideX;
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Top", dark,
+                WorldBackdropTokens.VignetteTopY, 28f, WorldBackdropTokens.VignetteTopHeight, 8);
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Left", dark, 0.4f, sideW, 10f, 8);
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Right", dark, 0.4f, sideW, 10f, 8);
+            ApplyVignetteTint(parent, "Top", tint, 0f, WorldBackdropTokens.VignetteTopY);
+            ApplyVignetteTint(parent, "Left", tint, -sideX, 0.4f);
+            ApplyVignetteTint(parent, "Right", tint, sideX, 0.4f);
+        }
+
+        private static void ApplyVignetteTint(Transform parent, string suffix, Color tint, float x, float y)
+        {
+            var t = parent.Find(WorldBackdropTokens.VignetteName + suffix);
+            if (t == null)
+                return;
+            t.position = new Vector3(x, y, 0f);
+            var sr = t.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.color = tint;
         }
 
         private static void DestroyIfPresent(string name)

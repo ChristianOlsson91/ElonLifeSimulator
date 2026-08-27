@@ -75,6 +75,8 @@ namespace ElonLifeSim.Core.Tests
             Run("UiTokens_AaaPaletteTypeMotionDimFilter", TestAaaThemeTokens);
             Run("TitleScreen_TaglineAndCtas", TestTitleScreenCopy);
             Run("WorldBackdrop_HorizonLineAndVignette", TestWorldHorizonLine);
+            Run("WorldBackdrop_SideVignetteLeavesWorldVisible", TestSideVignetteLeavesWorld);
+            Run("HoverOutline_RestoresPrimaryRestAfterHover", TestHoverOutlineRestoresRest);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -828,6 +830,7 @@ namespace ElonLifeSim.Core.Tests
             Assert(UiStyleTokens.OverlayA >= 0.70f && UiStyleTokens.OverlayA <= 0.80f,
                 "overlay " + UiStyleTokens.OverlayA);
             Assert(UiStyleTokens.HoverScale > 1f, "hover scale");
+            Assert(UiStyleTokens.RestoresRestOutlineAfterHover(), "primary rest stays accent after hover");
             Assert(UiStyleTokens.SpriteFilterModePoint == 0, "Point = 0");
             Assert(UiStyleTokens.SpriteFilterModeBilinear == 1, "Bilinear = 1");
             Assert(!UiStyleTokens.IsUnityDefaultButtonBlue(UiStyleTokens.PrimaryR, UiStyleTokens.PrimaryG, UiStyleTokens.PrimaryB),
@@ -851,6 +854,32 @@ namespace ElonLifeSim.Core.Tests
             Assert(WorldBackdropTokens.VignetteName == "Vignette", "vignette name");
             var p = WorldBackdropTokens.Pretoria();
             Assert(WorldBackdropTokens.IsDesignedBackdrop(p), "composed pretora");
+            Assert(WorldBackdropTokens.VignetteIsTranslucent(), "vignette alpha is not 1");
+            Assert(WorldBackdropTokens.SideVignetteLeavesWorldVisible(), "side vignette is a thin edge");
+        }
+
+        private static void TestSideVignetteLeavesWorld()
+        {
+            Assert(WorldBackdropTokens.VignetteAlpha < 1f, "vignette not opaque");
+            Assert(WorldBackdropTokens.VignetteIsTranslucent(), "vignette 0.15-0.55");
+            Assert(WorldBackdropTokens.VignetteSideWidth <= 2.0f, "side width much narrower than 6wu");
+            Assert(WorldBackdropTokens.VignetteSideWidth > 0.4f, "side width is a real edge band");
+            Assert(WorldBackdropTokens.SideVignetteInnerAbsX >= 6.5f,
+                "inner edge stays at frame sides, not over the actor: " + WorldBackdropTokens.SideVignetteInnerAbsX);
+            Assert(WorldBackdropTokens.SideVignetteLeavesWorldVisible(), "world stays visible");
+        }
+
+        private static void TestHoverOutlineRestoresRest()
+        {
+            var primary = UiStyleTokens.PrimaryOutlineRest();
+            var secondary = UiStyleTokens.SecondaryOutlineRest();
+            var primaryHot = UiStyleTokens.HoverOutline(true, primary);
+            var primaryCold = UiStyleTokens.HoverOutline(false, primary);
+            Assert(primaryHot.R == UiStyleTokens.AccentR, "hot uses accent");
+            Assert(primaryCold.SameAs(primary), "primary rest is accent, not border");
+            Assert(!primaryCold.SameAs(secondary), "must not snap back to border");
+            Assert(UiStyleTokens.HoverOutline(false, secondary).SameAs(secondary), "secondary rest is border");
+            Assert(UiStyleTokens.RestoresRestOutlineAfterHover(), "hover round-trip restores cached rest");
         }
 
         private static void TestTopBarLayoutNoClip()
@@ -973,9 +1002,19 @@ namespace ElonLifeSim.Core.Tests
 
             string hover = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "UiHoverAffordance.cs"));
             Assert(hover.IndexOf("HoverScale", StringComparison.Ordinal) >= 0, "hover scale");
+            Assert(hover.IndexOf("_restOutline", StringComparison.Ordinal) >= 0, "caches rest outline in Awake");
+            Assert(hover.IndexOf("UiStyleTokens.HoverOutline", StringComparison.Ordinal) >= 0,
+                "hover restore uses shipped HoverOutline");
+            Assert(hover.IndexOf("UiTheme.Border", StringComparison.Ordinal) < 0,
+                "SetHot(false) must not force Border");
 
             Assert(setup.IndexOf("HorizonLineName", StringComparison.Ordinal) >= 0, "horizon line in world");
             Assert(setup.IndexOf("VignetteName", StringComparison.Ordinal) >= 0, "vignette in world");
+            Assert(setup.IndexOf("VignetteSideWidth", StringComparison.Ordinal) >= 0, "side width from tokens");
+            Assert(setup.IndexOf("VignetteAlpha", StringComparison.Ordinal) >= 0, "shared vignette alpha");
+            Assert(setup.IndexOf("ApplyVignetteTint", StringComparison.Ordinal) >= 0, "Left/Right/Top get VignetteAlpha");
+            Assert(setup.IndexOf("7.4f", StringComparison.Ordinal) < 0, "no 6wu slabs at ±7.4");
+            Assert(setup.IndexOf(", 6f, 10f", StringComparison.Ordinal) < 0, "no 6wu side scale");
             Assert(setup.IndexOf("DebugLocationJump.Ensure", StringComparison.Ordinal) >= 0, "F1-F5 still ensured");
             Assert(setup.IndexOf("FilterMode.Point", StringComparison.Ordinal) >= 0
                    || File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Characters", "ElonSpriteCatalog.cs"))
