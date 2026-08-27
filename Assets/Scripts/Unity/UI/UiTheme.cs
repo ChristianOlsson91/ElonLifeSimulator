@@ -45,6 +45,9 @@ namespace ElonLifeSim.Unity.UI
             return font;
         }
 
+        public static Color ActiveNav =>
+            new Color(UiStyleTokens.ActiveNavR, UiStyleTokens.ActiveNavG, UiStyleTokens.ActiveNavB, 1f);
+
         public static ColorBlock ColorBlockFor(bool primary)
         {
             var normal = primary ? Primary : Secondary;
@@ -63,6 +66,41 @@ namespace ElonLifeSim.Unity.UI
             block.colorMultiplier = 1f;
             block.fadeDuration = 0.08f;
             return block;
+        }
+
+        public static ColorBlock ColorBlockForNav(bool active)
+        {
+            if (!active)
+                return ColorBlockFor(false);
+            var block = ColorBlock.defaultColorBlock;
+            block.normalColor = ActiveNav;
+            block.highlightedColor = new Color(0.22f, 0.58f, 0.54f, 1f);
+            block.selectedColor = ActiveNav;
+            block.pressedColor = new Color(0.10f, 0.34f, 0.32f, 1f);
+            block.disabledColor = new Color(ActiveNav.r, ActiveNav.g, ActiveNav.b, 0.35f);
+            block.colorMultiplier = 1f;
+            block.fadeDuration = 0.08f;
+            return block;
+        }
+
+        public static void ApplyNavVisual(Button btn, bool active)
+        {
+            if (btn == null)
+                return;
+            btn.colors = ColorBlockForNav(active);
+            var outline = btn.GetComponent<Outline>();
+            if (active)
+            {
+                if (outline == null)
+                    outline = btn.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0.55f, 0.88f, 0.82f, 0.95f);
+                outline.effectDistance = new Vector2(1.5f, -1.5f);
+                outline.enabled = true;
+            }
+            else if (outline != null)
+            {
+                outline.enabled = false;
+            }
         }
 
         public static GameObject CreateCanvas(string name, int sortingOrder)
@@ -229,6 +267,8 @@ namespace ElonLifeSim.Unity.UI
 
             var text = CreateText(go.transform, "Label", label, fontSize, Vector2.zero, size, TextAnchor.MiddleCenter);
             Stretch(text.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
             return btn;
         }

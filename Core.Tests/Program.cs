@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Models;
@@ -65,6 +66,12 @@ namespace ElonLifeSim.Core.Tests
             Run("HudExclusivity_ToggleOpenCloseAndDialogueClears", TestHudPanelExclusivity);
             Run("HudExclusivity_MenuAndStory", TestHudPanelMenuAndStory);
             Run("UiStyleTokens_HierarchyAndCopy", TestUiStyleTokens);
+            Run("TopBarLayout_InboxFullyVisible_EqualButtons", TestTopBarLayoutNoClip);
+            Run("HudStatusCopy_Act1Pretoria", TestHudStatusCopy);
+            Run("WorldBackdrop_PretoriaNotEditorGray", TestWorldBackdropPretoria);
+            Run("HudNavHighlight_AndSheetCloseToWorld", TestHudNavHighlightAndSheetClose);
+            Run("DialogueStrip_StaysBelowTopBar", TestDialogueStripBelowTopBar);
+            Run("HudSource_WiresTopBarAndBackdrop", TestHudSourceWiresLayout);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -790,6 +797,129 @@ namespace ElonLifeSim.Core.Tests
                 "reference resolution");
             Assert(UiStyleTokens.DisclaimerLabel.IndexOf("Not affiliated", StringComparison.Ordinal) >= 0,
                 "disclaimer present");
+            Assert(UiStyleTokens.TopBarScreenPadding >= 12, "screen padding");
+            Assert(UiStyleTokens.TopBarHeight <= 52, "top bar not thick");
+            Assert(UiStyleTokens.ActiveNavG != UiStyleTokens.SecondaryG, "active nav color distinct");
+        }
+
+        private static void TestTopBarLayoutNoClip()
+        {
+            Assert(TopBarLayout.NavCount == 4, "four nav buttons");
+            Assert(TopBarLayout.NavLabels[0] == "Inbox", "full Inbox label, not ibox");
+            Assert(TopBarLayout.NavLabels[1] == "Map", "Map");
+            Assert(TopBarLayout.NavLabels[2] == "Companies", "Companies");
+            Assert(TopBarLayout.NavLabels[3] == "Story", "Story");
+            Assert(TopBarLayout.NavLabels[0].IndexOf("ibox", StringComparison.Ordinal) < 0, "label is Inbox");
+
+            var inbox = TopBarLayout.NavButton(0);
+            Assert(inbox.X >= TopBarLayout.ScreenPad, "Inbox not flush with screen edge: x=" + inbox.X);
+            Assert(inbox.W == TopBarLayout.ButtonWidth, "Inbox width");
+            Assert(inbox.H == TopBarLayout.ButtonHeight, "Inbox height");
+            Assert(inbox.FullyInside(TopBarLayout.CanvasWidth, TopBarLayout.BarHeight, TopBarLayout.ScreenPad),
+                "Inbox fully inside canvas");
+
+            for (int i = 1; i < TopBarLayout.NavCount; i++)
+            {
+                var a = TopBarLayout.NavButton(i - 1);
+                var b = TopBarLayout.NavButton(i);
+                Assert(b.H == a.H && b.W == a.W, "same button size " + i);
+                Assert(Math.Abs((b.X - a.Right) - TopBarLayout.Gap) < 0.01f, "gap between " + (i - 1) + " and " + i);
+                Assert(!a.Overlaps(b), "buttons do not overlap");
+                Assert(b.FullyInside(TopBarLayout.CanvasWidth, TopBarLayout.BarHeight, TopBarLayout.ScreenPad),
+                    "button " + TopBarLayout.NavLabels[i] + " fully visible");
+            }
+
+            Assert(TopBarLayout.AllNavButtonsFullyVisible(), "all nav + status visible");
+            Assert(TopBarLayout.StatusClearsNav(), "status does not cover Story");
+            var status = TopBarLayout.StatusCluster();
+            Assert(status.Right <= TopBarLayout.CanvasWidth - TopBarLayout.ScreenPad + 0.01f, "status padding");
+        }
+
+        private static void TestHudStatusCopy()
+        {
+            Assert(HudStatusCopy.ActLine(1, "Pretoria") == "Act 1: Pretoria", "act line");
+            Assert(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria) == "Act 1: Pretoria",
+                "pretoria act");
+            Assert(HudStatusCopy.LocationLine("Pretoria, South Africa") == "Pretoria, South Africa", "location");
+            Assert(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria)
+                    .IndexOf("·", StringComparison.Ordinal) < 0,
+                "top-bar act is not a debug list");
+        }
+
+        private static void TestWorldBackdropPretoria()
+        {
+            var p = WorldBackdropTokens.ForLocation(PrototypeContent.LocationPretoria);
+            Assert(WorldBackdropTokens.IsDesignedBackdrop(p), "pretoria backdrop designed");
+            Assert(!WorldBackdropTokens.LooksLikeEditorGray(p.SkyR, p.SkyG, p.SkyB), "sky not editor gray");
+            Assert(!WorldBackdropTokens.LooksLikeEditorGray(p.GroundR, p.GroundG, p.GroundB), "ground not editor gray");
+            Assert(p.SkyB > p.SkyR, "sky is blue-ish dusk");
+            Assert(p.GroundR > p.GroundB, "ground is warm earth");
+            Assert(p.SkyLuma < p.GroundLuma || p.SkyLuma < 0.18f, "sky stays dark");
+            Assert(p.GroundTop < 0f, "floor under the actor so the body reads against sky");
+            Assert(WorldBackdropTokens.BackdropRootName == "WorldBackdrop", "root name");
+
+            var toronto = WorldBackdropTokens.ForLocation(PrototypeContent.LocationToronto);
+            Assert(WorldBackdropTokens.IsDesignedBackdrop(toronto), "toronto designed");
+        }
+
+        private static void TestHudNavHighlightAndSheetClose()
+        {
+            Assert(HudNavHighlight.ActiveIndex(HudLargePanel.Inbox) == 0, "inbox index");
+            Assert(HudNavHighlight.ActiveIndex(HudLargePanel.Map) == 1, "map index");
+            Assert(HudNavHighlight.ActiveIndex(HudLargePanel.None) == -1, "none unlit");
+            Assert(HudNavHighlight.ActiveIndex(HudLargePanel.Menu) == -1, "menu is not a nav");
+            Assert(HudNavHighlight.IsActive(HudLargePanel.Inbox, HudLargePanel.Inbox), "inbox lit");
+            Assert(!HudNavHighlight.IsActive(HudLargePanel.Inbox, HudLargePanel.Map), "map unlit when inbox");
+            Assert(HudPanelExclusivity.OnSheetClose(HudLargePanel.Inbox) == HudLargePanel.None,
+                "Close returns to world");
+            Assert(HudPanelExclusivity.OnSheetClose(HudLargePanel.Story) == HudLargePanel.None,
+                "Story Close returns to world");
+        }
+
+        private static void TestDialogueStripBelowTopBar()
+        {
+            Assert(!DialogueStripLayout.OverlapsTopBar(), "dialogue below top bar");
+            Assert(DialogueStripLayout.AnchorMaxY < DialogueStripLayout.TopBarBottomNormalized(),
+                "strip max y under bar");
+            Assert(DialogueStripLayout.AnchorMinY == 0f, "strip sits on the bottom");
+        }
+
+        private static void TestHudSourceWiresLayout()
+        {
+            string root = FindRepoRoot();
+            string hud = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "GameplayHudBuilder.cs"));
+            Assert(hud.IndexOf("CreateTopBarNav", StringComparison.Ordinal) >= 0, "builder creates top-bar nav");
+            Assert(hud.IndexOf("NavInbox", StringComparison.Ordinal) >= 0, "NavInbox exists");
+            Assert(hud.IndexOf("TopBarLayout.NavButton", StringComparison.Ordinal) >= 0, "builder uses TopBarLayout");
+            Assert(hud.IndexOf("TopBarLayout.NavLabels", StringComparison.Ordinal) >= 0, "labels come from TopBarLayout");
+            Assert(hud.IndexOf("HudStatusCopy.ActLineForLocation", StringComparison.Ordinal) >= 0, "act copy wired");
+            Assert(hud.IndexOf("DialogueStripLayout", StringComparison.Ordinal) >= 0, "dialogue strip tokens");
+            Assert(hud.IndexOf("HUD_Canvas", StringComparison.Ordinal) >= 0, "single HUD canvas name");
+
+            string setup = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Bootstrap", "GameplaySceneSetup.cs"));
+            Assert(setup.IndexOf("WorldBackdropTokens.ForLocation", StringComparison.Ordinal) >= 0,
+                "scene setup uses backdrop tokens");
+            Assert(setup.IndexOf("WorldBackdropTokens.BackdropRootName", StringComparison.Ordinal) >= 0,
+                "named WorldBackdrop root");
+
+            string inbox = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "InboxUI.cs"));
+            Assert(inbox.IndexOf("hud.Close()", StringComparison.Ordinal) >= 0, "Inbox Close dismisses");
+            Assert(inbox.IndexOf("hud.Open(HudLargePanel.Menu)", StringComparison.Ordinal) < 0,
+                "Inbox Close does not dump into Esc menu");
+        }
+
+        private static string FindRepoRoot()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                var hud = Path.Combine(dir.FullName, "Assets", "Scripts", "Unity", "UI", "GameplayHudBuilder.cs");
+                if (File.Exists(hud))
+                    return dir.FullName;
+                dir = dir.Parent;
+            }
+
+            throw new InvalidOperationException("repo root with GameplayHudBuilder.cs not found from " + AppContext.BaseDirectory);
         }
     }
 }

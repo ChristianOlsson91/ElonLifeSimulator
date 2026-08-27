@@ -38,22 +38,19 @@ namespace ElonLifeSim.Unity.Bootstrap
 
             if (name == PrototypeContent.SceneSouthAfrica || name.Contains("SouthAfrica") || name.Contains("Pretoria"))
             {
-                EnsureGameplay(PrototypeContent.LocationPretoria,
-                    new Color(0.35f, 0.4f, 0.28f), new Color(0.45f, 0.5f, 0.32f));
+                EnsureGameplay(PrototypeContent.LocationPretoria);
                 return;
             }
 
             if (name == PrototypeContent.SceneCanada || name.Contains("Canada") || name.Contains("Toronto"))
             {
-                EnsureGameplay(PrototypeContent.LocationToronto,
-                    new Color(0.25f, 0.32f, 0.42f), new Color(0.3f, 0.35f, 0.4f));
+                EnsureGameplay(PrototypeContent.LocationToronto);
                 return;
             }
 
             if (name == PrototypeContent.SceneSiliconValley || name.Contains("Silicon") || name.Contains("Palo"))
             {
-                EnsureGameplay(PrototypeContent.LocationPaloAlto,
-                    new Color(0.2f, 0.28f, 0.38f), new Color(0.28f, 0.32f, 0.36f));
+                EnsureGameplay(PrototypeContent.LocationPaloAlto);
                 return;
             }
 
@@ -76,8 +73,11 @@ namespace ElonLifeSim.Unity.Bootstrap
             go.AddComponent<MainMenuSceneSetup>().EnsureBuilt();
         }
 
-        private static void EnsureGameplay(string locationId, Color bg, Color ground)
+        private static void EnsureGameplay(string locationId)
         {
+            var palette = WorldBackdropTokens.ForLocation(locationId);
+            var bg = new Color(palette.SkyR, palette.SkyG, palette.SkyB, 1f);
+            var ground = new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f);
             EnsureCamera(bg);
 
             var existing = Object.FindFirstObjectByType<GameplaySceneSetup>();

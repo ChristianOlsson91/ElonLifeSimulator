@@ -57,7 +57,7 @@ namespace ElonLifeSim.Unity.UI
         {
             var hud = HudPanelController.Find();
             if (hud != null)
-                hud.Open(HudLargePanel.Menu);
+                hud.Close();
         }
 
         public void PlayCurrentBeat()

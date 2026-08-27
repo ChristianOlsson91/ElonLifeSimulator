@@ -64,5 +64,42 @@ namespace ElonLifeSim.Core.Services
         public static bool IsResolve(HudLargePanel current) => current == HudLargePanel.Resolve;
         public static bool IsMenu(HudLargePanel current) => current == HudLargePanel.Menu;
         public static bool IsStory(HudLargePanel current) => current == HudLargePanel.Story;
+
+        /// <summary>Panel Close returns to the world. Esc still opens Menu from gameplay.</summary>
+        public static HudLargePanel OnSheetClose(HudLargePanel current)
+        {
+            _ = current;
+            return HudLargePanel.None;
+        }
+    }
+
+    /// <summary>Which top-bar nav button is lit for the open large panel.</summary>
+    public static class HudNavHighlight
+    {
+        public static readonly HudLargePanel[] NavPanels =
+        {
+            HudLargePanel.Inbox,
+            HudLargePanel.Map,
+            HudLargePanel.Companies,
+            HudLargePanel.Story
+        };
+
+        public static bool IsActive(HudLargePanel open, HudLargePanel nav)
+        {
+            if (nav == HudLargePanel.None)
+                return false;
+            return open == nav;
+        }
+
+        public static int ActiveIndex(HudLargePanel open)
+        {
+            for (int i = 0; i < NavPanels.Length; i++)
+            {
+                if (NavPanels[i] == open)
+                    return i;
+            }
+
+            return -1;
+        }
     }
 }

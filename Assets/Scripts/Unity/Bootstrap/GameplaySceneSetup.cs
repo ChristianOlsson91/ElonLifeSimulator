@@ -12,8 +12,8 @@ namespace ElonLifeSim.Unity.Bootstrap
     public sealed class GameplaySceneSetup : MonoBehaviour
     {
         [SerializeField] private string locationId = PrototypeContent.LocationPretoria;
-        [SerializeField] private Color backgroundColor = new Color(0.35f, 0.4f, 0.28f, 1f);
-        [SerializeField] private Color groundColor = new Color(0.45f, 0.5f, 0.32f, 1f);
+        [SerializeField] private Color backgroundColor = new Color(0.078f, 0.125f, 0.255f, 1f);
+        [SerializeField] private Color groundColor = new Color(0.275f, 0.215f, 0.135f, 1f);
         [SerializeField] private Color playerColor = new Color(0.85f, 0.7f, 0.45f, 1f);
 
         private bool _built;
@@ -65,9 +65,10 @@ namespace ElonLifeSim.Unity.Bootstrap
                 camGo.AddComponent<AudioListener>();
             }
 
+            var palette = WorldBackdropTokens.ForLocation(locationId);
             cam.orthographic = true;
             cam.orthographicSize = PixelOrthoSize();
-            cam.backgroundColor = backgroundColor;
+            cam.backgroundColor = new Color(palette.SkyR, palette.SkyG, palette.SkyB, 1f);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.allowMSAA = false;
             cam.transform.position = new Vector3(0, 0, -10);
@@ -100,14 +101,42 @@ namespace ElonLifeSim.Unity.Bootstrap
             if (leftover != null)
                 Destroy(leftover);
 
-            if (GameObject.Find("Ground") != null || GameObject.Find("PlaceholderGround") != null)
+            if (GameObject.Find(WorldBackdropTokens.BackdropRootName) != null)
                 return;
 
-            var ground = new GameObject("Ground");
-            var sr = ground.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateSolidSprite(groundColor, 64, 64);
-            sr.sortingOrder = -10;
-            ground.transform.localScale = new Vector3(16, 10, 1);
+            DestroyIfPresent("Ground");
+            DestroyIfPresent("PlaceholderGround");
+
+            var palette = WorldBackdropTokens.ForLocation(locationId);
+            backgroundColor = new Color(palette.SkyR, palette.SkyG, palette.SkyB, 1f);
+            groundColor = new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f);
+
+            var root = new GameObject(WorldBackdropTokens.BackdropRootName);
+            CreateBand(root.transform, WorldBackdropTokens.HorizonName,
+                new Color(palette.HorizonR, palette.HorizonG, palette.HorizonB, 1f),
+                palette.HorizonY, 28f, palette.HorizonHeight, -15);
+            CreateBand(root.transform, WorldBackdropTokens.GroundName,
+                new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f),
+                palette.GroundY, 28f, palette.GroundHeight, -20);
+        }
+
+        private static void DestroyIfPresent(string name)
+        {
+            var go = GameObject.Find(name);
+            if (go != null)
+                Destroy(go);
+        }
+
+        private static void CreateBand(Transform parent, string name, Color color, float y, float width, float height, int sort)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = new Vector3(0f, y, 0f);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateSolidSprite(color, 64, 64);
+            sr.sortingOrder = sort;
+            const float spriteWorld = 64f / 16f;
+            go.transform.localScale = new Vector3(width / spriteWorld, height / spriteWorld, 1f);
         }
 
         private void SetupPlayer()

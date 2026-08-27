@@ -8,7 +8,7 @@ namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
     /// Builds the in-game HUD using <see cref="UiTheme"/> so it matches the main menu.
-    /// Large sheets open from the Esc menu and are centered on screen.
+    /// Top bar: Inbox / Map / Companies / Story plus location and act. One centered sheet at a time.
     /// </summary>
     public sealed class GameplayHudBuilder : MonoBehaviour
     {
@@ -35,7 +35,7 @@ namespace ElonLifeSim.Unity.UI
             var overlay = UiTheme.CreateDimOverlay(canvasGo.transform, "DimOverlay");
             overlay.SetActive(false);
 
-            float barH = UiStyleTokens.TopBarHeight;
+            float barH = TopBarLayout.BarHeight;
             var topBar = UiTheme.CreatePanel(canvasGo.transform, "TopBar",
                 new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(0, -barH), new Vector2(0, 0), UiTheme.TopBarFill);
@@ -44,22 +44,24 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0),
                 new Vector2(0, 2), UiTheme.Primary);
 
-            var escHint = UiTheme.CreateText(topBar.transform, "EscHint", "Esc · Menu",
-                UiStyleTokens.CaptionFontSize, new Vector2(16, -18), new Vector2(160, 20), TextAnchor.MiddleLeft);
-            escHint.color = UiTheme.Muted;
+            var navInbox = CreateTopBarNav(topBar.transform, "NavInbox", 0);
+            var navMap = CreateTopBarNav(topBar.transform, "NavMap", 1);
+            var navCompanies = CreateTopBarNav(topBar.transform, "NavCompanies", 2);
+            var navStory = CreateTopBarNav(topBar.transform, "NavStory", 3);
 
-            var locLabel = UiTheme.CreateText(topBar.transform, "LocationLabel", "Location",
-                UiStyleTokens.TopBarLabelFontSize, new Vector2(-16, -10), new Vector2(420, 22), TextAnchor.MiddleRight);
-            locLabel.GetComponent<RectTransform>().anchorMin = new Vector2(1, 1);
-            locLabel.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
-            locLabel.GetComponent<RectTransform>().pivot = new Vector2(1, 1);
+            var status = TopBarLayout.StatusCluster();
+            var locLabel = UiTheme.CreateText(topBar.transform, "LocationLabel",
+                HudStatusCopy.LocationLine("Pretoria, South Africa"),
+                UiStyleTokens.TopBarLabelFontSize, Vector2.zero, new Vector2(status.W, 18), TextAnchor.MiddleRight);
+            locLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+            PlaceStatusLine(locLabel.rectTransform, 0);
 
-            var storyStatus = UiTheme.CreateText(topBar.transform, "StoryStatus", "Act 1",
-                UiStyleTokens.CaptionFontSize, new Vector2(-16, -32), new Vector2(520, 18), TextAnchor.MiddleRight);
+            var storyStatus = UiTheme.CreateText(topBar.transform, "StoryStatus",
+                HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria),
+                UiStyleTokens.CaptionFontSize, Vector2.zero, new Vector2(status.W, 16), TextAnchor.MiddleRight);
             storyStatus.color = UiTheme.Muted;
-            storyStatus.GetComponent<RectTransform>().anchorMin = new Vector2(1, 1);
-            storyStatus.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
-            storyStatus.GetComponent<RectTransform>().pivot = new Vector2(1, 1);
+            storyStatus.horizontalOverflow = HorizontalWrapMode.Overflow;
+            PlaceStatusLine(storyStatus.rectTransform, 1);
 
             var inboxPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "InboxPanel");
             UiTheme.AddSheetHeader(inboxPanel, "Inbox", "InboxClose", out _);
@@ -154,8 +156,12 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(20, 14), new Vector2(140, 32), true);
 
             var dialoguePanel = UiTheme.CreatePanel(canvasGo.transform, "DialoguePanel",
-                new Vector2(0.10f, 0), new Vector2(0.90f, 0.26f),
-                new Vector2(0, 16), new Vector2(0, 0), UiTheme.PanelFill);
+                new Vector2(0.08f, DialogueStripLayout.AnchorMinY),
+                new Vector2(0.92f, DialogueStripLayout.AnchorMaxY),
+                new Vector2(0, DialogueStripLayout.BottomPad), new Vector2(0, 0), UiTheme.PanelFill);
+            UiTheme.CreateHairline(dialoguePanel.transform, "DialogueTopEdge",
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
+                new Vector2(0, 2), UiTheme.Primary);
 
             var portraitGo = new GameObject("Portrait", typeof(RectTransform), typeof(Image));
             portraitGo.transform.SetParent(dialoguePanel.transform, false);
@@ -209,12 +215,23 @@ namespace ElonLifeSim.Unity.UI
             resolveUi.Bind(resolvePanel, resHeader, resBody, resChoices.transform, resClose);
 
             var storyUi = canvasGo.AddComponent<Act1StoryUI>();
-            storyUi.Bind(session, storyContinue, storySheetStatus, storyStatus, storyClose);
+            storyUi.Bind(session, storyContinue, storySheetStatus, null, storyClose);
 
-            canvasGo.AddComponent<HudLocationLabel>().Init(locLabel);
+            canvasGo.AddComponent<HudLocationLabel>().Init(locLabel, storyStatus);
 
             var hud = canvasGo.AddComponent<HudPanelController>();
             hud.Bind(topBar, inboxPanel, travelPanel, coPanel, resolvePanel, dialoguePanel, menuPanel, storyPanel, overlay);
+            hud.BindNav(navInbox, navMap, navCompanies, navStory);
+
+            navInbox.onClick.AddListener(() => inboxUi.Toggle());
+            navMap.onClick.AddListener(() => travelUi.Toggle());
+            navCompanies.onClick.AddListener(() => coUi.Toggle());
+            navStory.onClick.AddListener(() =>
+            {
+                hud.Toggle(HudLargePanel.Story);
+                if (hud.IsOpen(HudLargePanel.Story))
+                    storyUi.RefreshStatus();
+            });
 
             menuInbox.onClick.AddListener(() => inboxUi.Show());
             menuMap.onClick.AddListener(() => travelUi.Show());
@@ -238,6 +255,31 @@ namespace ElonLifeSim.Unity.UI
             topBar.SetActive(true);
 
             DontDestroyOnLoad(canvasGo);
+        }
+
+        private static Button CreateTopBarNav(Transform parent, string name, int index)
+        {
+            var rect = TopBarLayout.NavButton(index);
+            var btn = UiTheme.CreateButton(
+                parent,
+                name,
+                TopBarLayout.NavLabels[index],
+                new Vector2(rect.X, TopBarLayout.UnityYFromBottom(rect)),
+                new Vector2(rect.W, rect.H),
+                primary: false);
+            UiTheme.ApplyNavVisual(btn, false);
+            return btn;
+        }
+
+        private static void PlaceStatusLine(RectTransform rt, int line)
+        {
+            var status = TopBarLayout.StatusCluster();
+            rt.anchorMin = new Vector2(1, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(1, 1);
+            float lineH = line == 0 ? 18f : 16f;
+            rt.sizeDelta = new Vector2(status.W, lineH);
+            rt.anchoredPosition = new Vector2(-TopBarLayout.ScreenPad, -(status.Y + line * 16f));
         }
 
         private static Button CreateMenuButton(Transform parent, string name, string label, bool primary)
@@ -266,10 +308,12 @@ namespace ElonLifeSim.Unity.UI
     public sealed class HudLocationLabel : MonoBehaviour
     {
         private Text _label;
+        private Text _act;
 
-        public void Init(Text label)
+        public void Init(Text label, Text act = null)
         {
             _label = label;
+            _act = act;
             Refresh();
         }
 
@@ -277,10 +321,14 @@ namespace ElonLifeSim.Unity.UI
 
         private void Refresh()
         {
-            if (_label == null) return;
             var session = GameBootstrap.RequireSession();
-            if (session?.Travel.CurrentLocation != null)
-                _label.text = session.Travel.CurrentLocation.DisplayName;
+            var loc = session?.Travel.CurrentLocation;
+            string id = loc?.Id ?? PrototypeContent.LocationPretoria;
+            string display = loc != null ? loc.DisplayName : "Pretoria, South Africa";
+            if (_label != null)
+                _label.text = HudStatusCopy.LocationLine(display);
+            if (_act != null)
+                _act.text = HudStatusCopy.ActLineForLocation(id);
         }
     }
 }

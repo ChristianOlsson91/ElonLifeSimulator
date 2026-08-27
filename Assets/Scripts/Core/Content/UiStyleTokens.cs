@@ -23,9 +23,11 @@ namespace ElonLifeSim.Core.Content
         public const int PrimaryButtonHeight = 48;
         public const int SecondaryButtonHeight = 40;
         public const int TopBarButtonHeight = 32;
-        public const int TopBarButtonWidth = 110;
-        public const int TopBarHeight = 56;
-        public const int ButtonGap = 8;
+        public const int TopBarButtonWidth = 116;
+        public const int TopBarHeight = 48;
+        public const int TopBarScreenPadding = 16;
+        public const int TopBarStatusWidth = 340;
+        public const int ButtonGap = 10;
         public const int PanelPadding = 16;
         public const int HeaderHeight = 40;
         public const int CloseButtonWidth = 72;
@@ -33,6 +35,12 @@ namespace ElonLifeSim.Core.Content
         public const int ReferenceWidth = 1280;
         public const int ReferenceHeight = 720;
         public const int SheetActionHeight = 32;
+        public const float DialogueStripAnchorMaxY = 0.24f;
+        public const int DialogueStripBottomPad = 12;
+
+        public const float ActiveNavR = 0.16f;
+        public const float ActiveNavG = 0.50f;
+        public const float ActiveNavB = 0.46f;
 
         public const float ScreenBgR = 0.055f;
         public const float ScreenBgG = 0.065f;

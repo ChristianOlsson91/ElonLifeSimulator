@@ -6,9 +6,9 @@ namespace ElonLifeSim.Unity.UI
 {
     /// <summary>
     /// Applies <see cref="HudPanelExclusivity"/> to the HUD panels. Top bar stays
-    /// visible. When a sheet is open, overlay and sheet sit above the top bar.
-    /// Esc opens the centered Menu from gameplay, closes Menu back to the game,
-    /// and returns content sheets to the Menu. Dialogue is left alone.
+    /// visible and above the dimmer so nav stays clickable. Esc opens the centered
+    /// Menu from gameplay. Sheet Close returns to the world. Dialogue is a bottom
+    /// strip and is left alone.
     /// </summary>
     public sealed class HudPanelController : MonoBehaviour
     {
@@ -21,6 +21,10 @@ namespace ElonLifeSim.Unity.UI
         [SerializeField] private GameObject menuPanel;
         [SerializeField] private GameObject storyPanel;
         [SerializeField] private GameObject dimOverlay;
+        [SerializeField] private Button navInbox;
+        [SerializeField] private Button navMap;
+        [SerializeField] private Button navCompanies;
+        [SerializeField] private Button navStory;
 
         private HudLargePanel _open = HudLargePanel.None;
 
@@ -56,6 +60,15 @@ namespace ElonLifeSim.Unity.UI
             _open = HudLargePanel.None;
             WireOverlay();
             Apply();
+        }
+
+        public void BindNav(Button inbox, Button map, Button companies, Button story)
+        {
+            navInbox = inbox;
+            navMap = map;
+            navCompanies = companies;
+            navStory = story;
+            ApplyNavHighlight();
         }
 
         public void Toggle(HudLargePanel panel)
@@ -137,6 +150,20 @@ namespace ElonLifeSim.Unity.UI
                 if (sheet != null)
                     sheet.transform.SetAsLastSibling();
             }
+
+            // Nav stays clickable above the dimmer so the player can switch sheets.
+            if (topBar != null)
+                topBar.transform.SetAsLastSibling();
+
+            ApplyNavHighlight();
+        }
+
+        private void ApplyNavHighlight()
+        {
+            UiTheme.ApplyNavVisual(navInbox, HudNavHighlight.IsActive(_open, HudLargePanel.Inbox));
+            UiTheme.ApplyNavVisual(navMap, HudNavHighlight.IsActive(_open, HudLargePanel.Map));
+            UiTheme.ApplyNavVisual(navCompanies, HudNavHighlight.IsActive(_open, HudLargePanel.Companies));
+            UiTheme.ApplyNavVisual(navStory, HudNavHighlight.IsActive(_open, HudLargePanel.Story));
         }
 
         private GameObject SheetFor(HudLargePanel panel)
