@@ -51,6 +51,12 @@ namespace ElonLifeSim.Core.Services
             Dialogue = dialogue ?? throw new ArgumentNullException(nameof(dialogue));
             Companies = companies ?? throw new ArgumentNullException(nameof(companies));
             Act1 = act1 ?? throw new ArgumentNullException(nameof(act1));
+            Dialogue.ChoiceMade += OnDialogueChoice;
+        }
+
+        private void OnDialogueChoice(DialogueChoice choice)
+        {
+            Act1.ApplyChoice(choice);
         }
 
         /// <summary>
@@ -93,18 +99,26 @@ namespace ElonLifeSim.Core.Services
             if (Act1.IsComplete)
                 return false;
 
+            var finished = Act1.CurrentBeat;
             var ok = Act1.Advance();
+            if (ok)
+                DeliverAct1Inbox(finished);
             if (Act1.IsComplete)
-            {
                 OnAct1Complete();
-            }
             return ok;
+        }
+
+        private void DeliverAct1Inbox(Act1Progression.Beat finishedBeat)
+        {
+            foreach (var ticket in Act1Content.CreateInboxForCompletedBeat(finishedBeat))
+                Inbox.ReceiveTicket(ticket);
         }
 
         private void OnAct1Complete()
         {
             Travel.Unlock(PrototypeContent.LocationToronto);
-            // Seed a guidance ticket to travel — not a company problem.
+            ArchiveAct1Clippings();
+            // Seed a guidance ticket to travel — a letter, not a company problem.
             Inbox.ReceiveTicket(new InboxTicket(
                 id: "act1_travel_canada",
                 companyId: "personal",
@@ -113,11 +127,34 @@ namespace ElonLifeSim.Core.Services
                 locationDisplayName: "Toronto, Canada",
                 title: "North to Canada",
                 description:
-                    "Act 1 is complete. Canada is unlocked. Travel to Toronto to study, work, " +
-                    "and — when ready — found Zip2 from the Companies panel.",
+                    "A letter, not a company memo. The passport worked. Canada is unlocked. " +
+                    "Travel to Toronto. Zip2 waits until you found it from Companies.",
                 difficulty: 1,
                 rewardDescription: "Arrive in Canada · Found Zip2 available"));
             Act1Completed?.Invoke();
+        }
+
+        /// <summary>Act 1 notes/clippings stay readable as completed; they must not hide Zip2 problems.</summary>
+        private void ArchiveAct1Clippings()
+        {
+            var ids = new List<string>();
+            foreach (var t in Inbox.ListTickets())
+            {
+                if (t.Id == "act1_travel_canada")
+                    continue;
+                if (TryGetProblem(t.Id, out _))
+                    continue;
+                ids.Add(t.Id);
+            }
+
+            foreach (var id in ids)
+            {
+                if (!Inbox.TryGet(id, out var t))
+                    continue;
+                if (t.Status == TicketStatus.Pending)
+                    Inbox.AcceptTicket(id);
+                Inbox.CompleteTicket(id);
+            }
         }
 
         /// <summary>

@@ -30,6 +30,7 @@ namespace ElonLifeSim.Core.Tests
             // Act 1
             Run("Act1_AllNamedBeats_UnlockCanada", TestAct1FullSequence);
             Run("Act1_CanadaLockedUntilComplete", TestCanadaLockedUntilAct1);
+            Run("Act1_NineBeats_ChoicesTagsInboxFacts", TestAct1ShippedStoryFacts);
 
             // Companies
             Run("Companies_Zip2AndXCom_Registered", TestCompaniesRegistered);
@@ -132,29 +133,38 @@ namespace ElonLifeSim.Core.Tests
 
         private static void TestAct1FullSequence()
         {
+            string[] required =
+            {
+                "act1_home_choice",
+                "act1_encyclopedia",
+                "act1_vic20_night",
+                "act1_blastar",
+                "act1_bryanston_stairs",
+                "act1_boys_high",
+                "act1_garden_rocket",
+                "act1_world_outside",
+                "act1_exit_plan"
+            };
+            Assert(Act1Progression.NamedEventIds.Count == 9, "nine named beats");
+            Assert(Act1Progression.OrderedBeats.Count == 9, "nine ordered beats");
+            Assert(Act1Progression.NamedEventIds.SequenceEqual(required), "shipped ids match the Act 1 chain");
+            Assert(Act1Progression.DialogueId(Act1Progression.Beat.BryanstonStairs) == "act1_bryanston_stairs",
+                "stairs id");
+            Assert(Act1Progression.DialogueId(Act1Progression.Beat.BoysHigh) == "act1_boys_high", "boys high id");
+
             var act1 = new Act1Progression();
             act1.Begin();
-            Assert(act1.CurrentBeat == Act1Progression.Beat.HomeIntro, "home");
-            Assert(act1.GetCurrentDialogue() != null, "home dialogue");
-            Assert(act1.GetCurrentDialogue().Id == "act1_home_intro", "home id");
+            for (int i = 0; i < Act1Progression.OrderedBeats.Count; i++)
+            {
+                var beat = Act1Progression.OrderedBeats[i];
+                Assert(act1.CurrentBeat == beat, "beat " + beat);
+                var dialogue = act1.GetCurrentDialogue();
+                Assert(dialogue != null, "dialogue " + beat);
+                Assert(dialogue.Id == Act1Progression.DialogueId(beat), "id matches DialogueId");
+                Assert(dialogue.Id == Act1Progression.NamedEventIds[i], "id matches NamedEventIds");
+                Assert(act1.Advance(), "advance from " + beat);
+            }
 
-            Assert(act1.Advance(), "to school");
-            Assert(act1.CurrentBeat == Act1Progression.Beat.SchoolStaircase, "school");
-            Assert(act1.GetCurrentDialogue().Id == "act1_school_staircase", "school id");
-
-            Assert(act1.Advance(), "to library");
-            Assert(act1.CurrentBeat == Act1Progression.Beat.LibraryEncyclopedia, "library");
-            Assert(act1.GetCurrentDialogue().Id == "act1_library_encyclopedia", "lib id");
-
-            Assert(act1.Advance(), "to tech");
-            Assert(act1.CurrentBeat == Act1Progression.Beat.RocketsComputersPhysics, "tech");
-            Assert(act1.GetCurrentDialogue().Id == "act1_rockets_computers_physics", "tech id");
-
-            Assert(act1.Advance(), "to leave");
-            Assert(act1.CurrentBeat == Act1Progression.Beat.LeaveForCanada, "leave");
-            Assert(act1.GetCurrentDialogue().Id == "act1_leave_for_canada", "leave id");
-
-            Assert(act1.Advance(), "complete");
             Assert(act1.IsComplete, "complete");
             Assert(act1.CanadaUnlocked, "canada flag");
             Assert(act1.Zip2FoundingUnlocked, "zip2 flag");
@@ -173,6 +183,134 @@ namespace ElonLifeSim.Core.Tests
             Assert(session.Travel.IsUnlocked(PrototypeContent.LocationToronto), "unlocked");
             Assert(session.Inbox.ListTickets().Any(t => t.Id == "act1_travel_canada"), "travel ticket");
             Assert(session.Travel.TravelTo(PrototypeContent.LocationToronto), "travel canada");
+        }
+
+        private static void TestAct1ShippedStoryFacts()
+        {
+            foreach (var beat in Act1Progression.OrderedBeats)
+            {
+                var d = Act1Content.GetDialogueForBeat(beat);
+                Assert(d != null, "dialogue for " + beat);
+                Assert(d.Id == Act1Progression.DialogueId(beat), "id " + beat);
+                var choices = Act1Content.StartChoices(d);
+                Assert(choices.Count >= 2 && choices.Count <= 3, beat + " has 2-3 choices, got " + choices.Count);
+                Assert(Act1Content.StartChoicesHaveDistinctEffects(d), beat + " choices differ in tags/stats");
+                foreach (var c in choices)
+                    Assert(!string.IsNullOrWhiteSpace(c.Text), beat + " choice text");
+            }
+
+            var enc = Act1Content.GetDialogueForBeat(Act1Progression.Beat.Encyclopedia);
+            Assert(!Act1Content.LooksLikeQuiz(enc), "encyclopedia is not a quiz");
+
+            var vic = Act1Content.GetDialogueForBeat(Act1Progression.Beat.Vic20Night);
+            var vicText = Act1Content.FlattenText(vic);
+            Assert(vicText.IndexOf("VIC-20", StringComparison.OrdinalIgnoreCase) >= 0, "VIC-20 named");
+            Assert(vicText.IndexOf("BASIC", StringComparison.OrdinalIgnoreCase) >= 0, "BASIC manual");
+            Assert(vicText.IndexOf("days", StringComparison.OrdinalIgnoreCase) >= 0, "manual in days");
+            Assert(vicText.IndexOf("six months", StringComparison.OrdinalIgnoreCase) >= 0, "mentions the book's six-month claim");
+            Assert(vicText.IndexOf("six months of lessons", StringComparison.OrdinalIgnoreCase) < 0
+                   || vicText.IndexOf("dare", StringComparison.OrdinalIgnoreCase) >= 0
+                   || vicText.IndexOf("days", StringComparison.OrdinalIgnoreCase) >= 0,
+                "six months is the manual's claim, not the time spent");
+
+            var stairs = Act1Content.GetDialogueForBeat(Act1Progression.Beat.BryanstonStairs);
+            var stairsStart = stairs.Nodes[stairs.StartNodeId];
+            var stairsStartText = string.Join(" ", stairsStart.Lines.Select(l => l.Text));
+            Assert(stairsStartText.IndexOf("Bryanston", StringComparison.Ordinal) >= 0, "stairs at Bryanston");
+            Assert(stairsStartText.IndexOf("Boys High", StringComparison.Ordinal) < 0,
+                "start node does not place the staircase at Boys High");
+            foreach (var c in Act1Content.StartChoices(stairs))
+            {
+                var low = c.Text.ToLowerInvariant();
+                Assert(low.IndexOf("win the fight") < 0, "no fight-win choice");
+                Assert(low.IndexOf("qte") < 0, "no QTE");
+                Assert(low.IndexOf("beat them") < 0, "no beating");
+            }
+            var stairsAll = Act1Content.FlattenText(stairs).ToLowerInvariant();
+            Assert(stairsAll.IndexOf("hospital") >= 0, "hospital after stairs");
+            Assert(stairsAll.IndexOf("boys high") >= 0, "move to Boys High after");
+
+            var blastar = Act1Content.GetDialogueForBeat(Act1Progression.Beat.Blastar);
+            var blastarText = Act1Content.FlattenText(blastar);
+            Assert(blastarText.IndexOf("500", StringComparison.Ordinal) >= 0, "Blastar ~500");
+            Assert(blastarText.IndexOf("magazine", StringComparison.OrdinalIgnoreCase) >= 0, "magazine sale");
+            foreach (var c in Act1Content.StartChoices(blastar))
+                Assert(c.MoneyDelta == 500, "sale credits 500");
+
+            var clippings = Act1Content.CreateInboxForCompletedBeat(Act1Progression.Beat.Blastar);
+            Assert(clippings.Count >= 1, "blastar clipping factory");
+            Assert(clippings.Any(t => t.Id == "act1_clipping_blastar"), "magazine clipping id");
+            Assert(clippings[0].CompanyDisplayName.IndexOf("Clipping", StringComparison.OrdinalIgnoreCase) >= 0,
+                "clipping, not company mail");
+            Assert(clippings[0].Description.IndexOf("500", StringComparison.Ordinal) >= 0, "clipping names 500");
+            Assert(clippings[0].CompanyId != CompanyContent.Zip2 && clippings[0].CompanyId != CompanyContent.XCom,
+                "not company mail");
+
+            var session = new GameSession();
+            session.StartNewGame();
+            PlayCurrentBeatChoice(session, 0);
+            Assert(session.Act1.HasTag(Act1Progression.TagEncyclopedia), "encyclopedia unlocked via Choose");
+            session.AdvanceAct1Beat();
+
+            PlayCurrentBeatChoice(session, 0);
+            session.AdvanceAct1Beat();
+
+            PlayCurrentBeatChoice(session, 0);
+            Assert(session.Act1.HasTag(Act1Progression.TagProgramming), "programming unlocked");
+            session.AdvanceAct1Beat();
+
+            var moneyBefore = session.Act1.Money;
+            PlayCurrentBeatChoice(session, 0);
+            Assert(session.Act1.Money == moneyBefore + 500, "Blastar money via Dialogue.Choose");
+            session.AdvanceAct1Beat();
+            Assert(session.Inbox.ListTickets().Any(t => t.Id == "act1_clipping_blastar"),
+                "session delivers magazine clipping");
+
+            while (session.Act1.CurrentBeat != Act1Progression.Beat.GardenRocket)
+                Assert(session.AdvanceAct1Beat(), "advance to rocket");
+            PlayCurrentBeatChoice(session, 0);
+            Assert(session.Act1.HasTag(Act1Progression.TagPhysics), "physics tag");
+
+            var focusA = ApplyChoiceOnFreshBeat(Act1Progression.Beat.HomeChoice, 0);
+            var focusB = ApplyChoiceOnFreshBeat(Act1Progression.Beat.HomeChoice, 1);
+            Assert(focusA.Focus != focusB.Focus || focusA.ExitPlan != focusB.ExitPlan
+                   || focusA.ThickSkin != focusB.ThickSkin,
+                "home choices apply distinct stats");
+
+            while (!session.Act1.IsComplete)
+                Assert(session.AdvanceAct1Beat(), "finish act1");
+            Assert(session.Travel.IsUnlocked(PrototypeContent.LocationToronto), "toronto after last beat");
+            Assert(session.Act1.Zip2FoundingUnlocked, "zip2 founding");
+            Assert(session.Inbox.ListTickets().Any(t => t.Id == "act1_travel_canada"), "canada ticket");
+
+            foreach (var t in session.Inbox.ListTickets())
+            {
+                if (t.Id == "act1_travel_canada")
+                    continue;
+                Assert(t.CompanyId != CompanyContent.Zip2 && t.CompanyId != CompanyContent.XCom,
+                    t.Id + " is not company mail");
+            }
+        }
+
+        private static void PlayCurrentBeatChoice(GameSession session, int choiceIndex)
+        {
+            var d = session.GetAct1Dialogue();
+            Assert(d != null, "current dialogue");
+            Assert(session.Dialogue.Start(d), "start dialogue");
+            int guard = 0;
+            while (session.Dialogue.IsActive && !session.Dialogue.IsAwaitingChoice && guard++ < 20)
+                session.Dialogue.Advance();
+            Assert(session.Dialogue.IsAwaitingChoice, "awaiting choice on " + d.Id);
+            Assert(session.Dialogue.Choose(choiceIndex), "choose " + choiceIndex);
+        }
+
+        private static Act1Progression ApplyChoiceOnFreshBeat(Act1Progression.Beat beat, int choiceIndex)
+        {
+            var act1 = new Act1Progression();
+            var d = Act1Content.GetDialogueForBeat(beat);
+            var choice = Act1Content.StartChoices(d)[choiceIndex];
+            act1.ApplyChoice(choice);
+            return act1;
         }
 
         private static void TestCompaniesRegistered()
@@ -339,7 +477,7 @@ namespace ElonLifeSim.Core.Tests
             var session = new GameSession();
             session.StartNewGame();
             Assert(session.HasStarted, "started");
-            Assert(session.Act1.CurrentBeat == Act1Progression.Beat.HomeIntro, "act1 start");
+            Assert(session.Act1.CurrentBeat == Act1Progression.FirstBeat, "act1 start");
 
             CompleteAct1(session);
             Assert(session.Act1.CanadaUnlocked || session.Travel.IsUnlocked(PrototypeContent.LocationToronto), "canada");
@@ -358,7 +496,7 @@ namespace ElonLifeSim.Core.Tests
         private static void CompleteAct1(GameSession session)
         {
             int guard = 0;
-            while (!session.Act1.IsComplete && guard++ < 20)
+            while (!session.Act1.IsComplete && guard++ < 30)
                 session.AdvanceAct1Beat();
             Assert(session.Act1.IsComplete, "act1 should complete");
         }

@@ -31,6 +31,7 @@ namespace ElonLifeSim.Core.Services
 
         public event Action StateChanged;
         public event Action Completed;
+        public event Action<DialogueChoice> ChoiceMade;
 
         /// <summary>Starts a dialogue from its start node. Returns false if definition invalid.</summary>
         public bool Start(DialogueDefinition definition)
@@ -89,6 +90,7 @@ namespace ElonLifeSim.Core.Services
                 return false;
 
             var choice = AvailableChoices[choiceIndex];
+            ChoiceMade?.Invoke(choice);
             if (string.IsNullOrEmpty(choice.NextNodeId))
             {
                 Complete();

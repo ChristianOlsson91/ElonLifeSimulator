@@ -12,10 +12,14 @@
     "xcom_internal_leadership"
   ],
   "act1_events": [
-    "act1_home_intro",
-    "act1_school_staircase",
-    "act1_library_encyclopedia",
-    "act1_rockets_computers_physics",
-    "act1_leave_for_canada"
+    "act1_home_choice",
+    "act1_encyclopedia",
+    "act1_vic20_night",
+    "act1_blastar",
+    "act1_bryanston_stairs",
+    "act1_boys_high",
+    "act1_garden_rocket",
+    "act1_world_outside",
+    "act1_exit_plan"
   ]
 }

@@ -17,17 +17,48 @@ namespace ElonLifeSim.Core.Models
         }
     }
 
-    /// <summary>A player choice that may branch to another node id (null = end dialogue).</summary>
+    /// <summary>
+    /// A player choice that may branch to another node id (null = end dialogue).
+    /// Act 1 choices carry a tag and Focus / ThickSkin / ExitPlan (and optional money) deltas.
+    /// </summary>
     [Serializable]
     public sealed class DialogueChoice
     {
         public string Text { get; }
         public string NextNodeId { get; }
+        public string Tag { get; }
+        public int FocusDelta { get; }
+        public int ThickSkinDelta { get; }
+        public int ExitPlanDelta { get; }
+        public int MoneyDelta { get; }
 
-        public DialogueChoice(string text, string nextNodeId = null)
+        public DialogueChoice(
+            string text,
+            string nextNodeId = null,
+            string tag = null,
+            int focusDelta = 0,
+            int thickSkinDelta = 0,
+            int exitPlanDelta = 0,
+            int moneyDelta = 0)
         {
             Text = text ?? string.Empty;
             NextNodeId = nextNodeId;
+            Tag = tag ?? string.Empty;
+            FocusDelta = focusDelta;
+            ThickSkinDelta = thickSkinDelta;
+            ExitPlanDelta = exitPlanDelta;
+            MoneyDelta = moneyDelta;
+        }
+
+        public bool EffectsDifferFrom(DialogueChoice other)
+        {
+            if (other == null)
+                return true;
+            return Tag != other.Tag
+                   || FocusDelta != other.FocusDelta
+                   || ThickSkinDelta != other.ThickSkinDelta
+                   || ExitPlanDelta != other.ExitPlanDelta
+                   || MoneyDelta != other.MoneyDelta;
         }
     }
 

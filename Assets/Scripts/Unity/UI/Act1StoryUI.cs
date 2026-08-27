@@ -110,7 +110,7 @@ namespace ElonLifeSim.Unity.UI
             if (_session == null)
                 _session = GameBootstrap.RequireSession();
             if (_session == null || _session.Act1.IsComplete) return;
-            if (_session.Act1.CurrentBeat == Act1Progression.Beat.HomeIntro)
+            if (_session.Act1.CurrentBeat == Act1Progression.FirstBeat)
                 PlayCurrentBeat();
         }
     }

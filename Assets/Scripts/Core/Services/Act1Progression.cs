@@ -6,115 +6,183 @@ using ElonLifeSim.Core.Models;
 namespace ElonLifeSim.Core.Services
 {
     /// <summary>
-    /// Ordered Act 1 (South Africa) narrative beats.
-    /// Completing the sequence unlocks Canada and the path to found Zip2.
-    ///
-    /// Beats (GDD): staircase/bullying; encyclopedia; rockets/computers/physics; leave for Canada.
-    /// School / home / library are represented as narrative labels in dialogue (not full tilemaps).
+    /// Ordered Act 1 (Pretoria) beats. Completing the last beat unlocks Canada and Zip2 founding.
     /// </summary>
     public sealed class Act1Progression
     {
         public enum Beat
         {
             NotStarted = 0,
-            /// <summary>Home — intro in Pretoria.</summary>
-            HomeIntro = 1,
-            /// <summary>School — bullying / staircase incident (respectful framing).</summary>
-            SchoolStaircase = 2,
-            /// <summary>Library — obsessive encyclopedia reading.</summary>
-            LibraryEncyclopedia = 3,
-            /// <summary>Home study — rockets, computers, physics curiosity.</summary>
-            RocketsComputersPhysics = 4,
-            /// <summary>Decision to leave South Africa for Canada.</summary>
-            LeaveForCanada = 5,
-            Complete = 6
+            HomeChoice = 1,
+            Encyclopedia = 2,
+            Vic20Night = 3,
+            Blastar = 4,
+            BryanstonStairs = 5,
+            BoysHigh = 6,
+            GardenRocket = 7,
+            WorldOutside = 8,
+            ExitPlan = 9,
+            Complete = 10
         }
+
+        public static readonly IReadOnlyList<Beat> OrderedBeats = new[]
+        {
+            Beat.HomeChoice,
+            Beat.Encyclopedia,
+            Beat.Vic20Night,
+            Beat.Blastar,
+            Beat.BryanstonStairs,
+            Beat.BoysHigh,
+            Beat.GardenRocket,
+            Beat.WorldOutside,
+            Beat.ExitPlan
+        };
+
+        public const string TagEncyclopedia = "encyclopedia";
+        public const string TagProgramming = "programming";
+        public const string TagPhysics = "physics";
+        public const string TagSpace = "space";
+        public const string TagEnergy = "energy";
+        public const string TagComputers = "computers";
+        public const string TagFirstCompany = "first_company";
 
         public Beat CurrentBeat { get; private set; } = Beat.NotStarted;
         public bool IsComplete => CurrentBeat == Beat.Complete;
         public bool CanadaUnlocked { get; private set; }
         public bool Zip2FoundingUnlocked { get; private set; }
 
-        /// <summary>Raised when beat advances (previous, current).</summary>
+        public int Focus { get; private set; }
+        public int ThickSkin { get; private set; }
+        public int ExitPlan { get; private set; }
+        public int Money { get; private set; }
+
+        private readonly HashSet<string> _tags = new HashSet<string>(StringComparer.Ordinal);
+
+        public IReadOnlyCollection<string> Tags => _tags;
+
         public event Action<Beat, Beat> BeatChanged;
         public event Action Act1Completed;
+
+        public static Beat FirstBeat => OrderedBeats[0];
+
+        public static string DialogueId(Beat beat)
+        {
+            switch (beat)
+            {
+                case Beat.HomeChoice: return "act1_home_choice";
+                case Beat.Encyclopedia: return "act1_encyclopedia";
+                case Beat.Vic20Night: return "act1_vic20_night";
+                case Beat.Blastar: return "act1_blastar";
+                case Beat.BryanstonStairs: return "act1_bryanston_stairs";
+                case Beat.BoysHigh: return "act1_boys_high";
+                case Beat.GardenRocket: return "act1_garden_rocket";
+                case Beat.WorldOutside: return "act1_world_outside";
+                case Beat.ExitPlan: return "act1_exit_plan";
+                default: return null;
+            }
+        }
+
+        public static IReadOnlyList<string> NamedEventIds
+        {
+            get
+            {
+                var ids = new string[OrderedBeats.Count];
+                for (int i = 0; i < OrderedBeats.Count; i++)
+                    ids[i] = DialogueId(OrderedBeats[i]);
+                return ids;
+            }
+        }
 
         public void Reset()
         {
             CurrentBeat = Beat.NotStarted;
             CanadaUnlocked = false;
             Zip2FoundingUnlocked = false;
+            Focus = 0;
+            ThickSkin = 0;
+            ExitPlan = 0;
+            Money = 0;
+            _tags.Clear();
         }
 
-        /// <summary>Begins Act 1 at Home intro.</summary>
         public void Begin()
         {
-            SetBeat(Beat.HomeIntro);
+            SetBeat(FirstBeat);
         }
 
-        /// <summary>
-        /// Advances to the next beat after the player finishes the current beat's dialogue.
-        /// Completing LeaveForCanada unlocks Canada + Zip2 founding path.
-        /// </summary>
         public bool Advance()
         {
             if (IsComplete)
                 return false;
 
-            switch (CurrentBeat)
+            if (CurrentBeat == Beat.NotStarted)
             {
-                case Beat.NotStarted:
-                    SetBeat(Beat.HomeIntro);
-                    return true;
-                case Beat.HomeIntro:
-                    SetBeat(Beat.SchoolStaircase);
-                    return true;
-                case Beat.SchoolStaircase:
-                    SetBeat(Beat.LibraryEncyclopedia);
-                    return true;
-                case Beat.LibraryEncyclopedia:
-                    SetBeat(Beat.RocketsComputersPhysics);
-                    return true;
-                case Beat.RocketsComputersPhysics:
-                    SetBeat(Beat.LeaveForCanada);
-                    return true;
-                case Beat.LeaveForCanada:
-                    CompleteAct1();
-                    return true;
-                default:
-                    return false;
+                SetBeat(FirstBeat);
+                return true;
             }
+
+            int i = IndexOf(CurrentBeat);
+            if (i < 0)
+                return false;
+            if (i >= OrderedBeats.Count - 1)
+            {
+                CompleteAct1();
+                return true;
+            }
+
+            SetBeat(OrderedBeats[i + 1]);
+            return true;
         }
 
-        /// <summary>Dialogue for the current beat (null if complete / not started).</summary>
         public DialogueDefinition GetCurrentDialogue()
         {
             return Act1Content.GetDialogueForBeat(CurrentBeat);
+        }
+
+        public void ApplyChoice(DialogueChoice choice)
+        {
+            if (choice == null)
+                return;
+            Focus += choice.FocusDelta;
+            ThickSkin += choice.ThickSkinDelta;
+            ExitPlan += choice.ExitPlanDelta;
+            Money += choice.MoneyDelta;
+            if (!string.IsNullOrEmpty(choice.Tag))
+                _tags.Add(choice.Tag);
+        }
+
+        public bool HasTag(string tag)
+        {
+            return !string.IsNullOrEmpty(tag) && _tags.Contains(tag);
         }
 
         public string GetBeatLocationLabel()
         {
             switch (CurrentBeat)
             {
-                case Beat.HomeIntro: return "Home · Pretoria";
-                case Beat.SchoolStaircase: return "School · Pretoria";
-                case Beat.LibraryEncyclopedia: return "Library · Pretoria";
-                case Beat.RocketsComputersPhysics: return "Home study · Pretoria";
-                case Beat.LeaveForCanada: return "Home · Decision";
+                case Beat.HomeChoice: return "Home · Pretoria";
+                case Beat.Encyclopedia: return "Books · Pretoria";
+                case Beat.Vic20Night: return "VIC-20 · Pretoria";
+                case Beat.Blastar: return "Blastar · Pretoria";
+                case Beat.BryanstonStairs: return "Bryanston High";
+                case Beat.BoysHigh: return "Pretoria Boys High";
+                case Beat.GardenRocket: return "Garden · Pretoria";
+                case Beat.WorldOutside: return "Pretoria · 1988";
+                case Beat.ExitPlan: return "Leaving · 1989";
                 case Beat.Complete: return "Act 1 complete";
                 default: return "Pretoria";
             }
         }
 
-        /// <summary>All named Act 1 event ids for inventory/tests.</summary>
-        public static IReadOnlyList<string> NamedEventIds => new[]
+        private static int IndexOf(Beat beat)
         {
-            "act1_home_intro",
-            "act1_school_staircase",
-            "act1_library_encyclopedia",
-            "act1_rockets_computers_physics",
-            "act1_leave_for_canada"
-        };
+            for (int i = 0; i < OrderedBeats.Count; i++)
+            {
+                if (OrderedBeats[i] == beat)
+                    return i;
+            }
+            return -1;
+        }
 
         private void CompleteAct1()
         {
