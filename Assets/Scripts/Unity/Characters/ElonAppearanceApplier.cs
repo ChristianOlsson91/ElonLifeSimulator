@@ -101,6 +101,7 @@ namespace ElonLifeSim.Unity.Characters
             sr.sortingOrder = 20;
             sr.color = Color.white;
             sr.flipY = false;
+            UiTheme.ApplyPointFilter(sr);
         }
 
         private static void FitHeight(GameObject player)

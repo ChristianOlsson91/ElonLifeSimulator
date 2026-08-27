@@ -55,6 +55,11 @@ namespace ElonLifeSim.Core.Content
         public const string BackdropRootName = "WorldBackdrop";
         public const string GroundName = "Ground";
         public const string HorizonName = "Horizon";
+        public const string HorizonLineName = "HorizonLine";
+        public const string VignetteName = "Vignette";
+        public const string SoftSkyName = "SoftSky";
+        public const float HorizonLineHeight = 0.07f;
+        public const float VignetteAlpha = 0.42f;
 
         public static WorldBackdropPalette ForLocation(string locationId)
         {
@@ -123,6 +128,11 @@ namespace ElonLifeSim.Core.Content
             if (p.GroundTop >= 0.05f)
                 return false;
             return true;
+        }
+
+        public static bool HasHorizonLine()
+        {
+            return HorizonLineName == "HorizonLine" && HorizonLineHeight > 0f && HorizonLineHeight < 0.2f;
         }
 
         private static float Abs(float v) => v < 0f ? -v : v;

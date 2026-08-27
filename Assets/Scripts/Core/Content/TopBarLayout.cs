@@ -144,4 +144,29 @@ namespace ElonLifeSim.Core.Content
             return AnchorMaxY >= TopBarBottomNormalized();
         }
     }
+
+    /// <summary>Title-screen copy and CTA roles. No PLACEHOLDER.</summary>
+    public static class TitleScreenCopy
+    {
+        public static string Title => UiStyleTokens.GameTitle;
+        public static string Tagline => UiStyleTokens.GameSubtitle;
+        public static string PrimaryCta => UiStyleTokens.PrimaryCta;
+        public static string SecondaryCta => UiStyleTokens.SecondaryCta;
+
+        public static bool IsPlaceholder(string copy)
+        {
+            if (string.IsNullOrEmpty(copy))
+                return false;
+            return copy.IndexOf("PLACEHOLDER", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool IsValidTitleScreen()
+        {
+            return Tagline == "From Pretoria to Mars"
+                   && PrimaryCta == "New Game"
+                   && SecondaryCta == "Quit"
+                   && !IsPlaceholder(Title)
+                   && !IsPlaceholder(Tagline);
+        }
+    }
 }

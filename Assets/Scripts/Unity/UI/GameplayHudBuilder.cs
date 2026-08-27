@@ -42,7 +42,7 @@ namespace ElonLifeSim.Unity.UI
 
             UiTheme.CreateHairline(topBar.transform, "TopBarEdge",
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0),
-                new Vector2(0, 2), UiTheme.Primary);
+                new Vector2(0, 1), UiTheme.Accent);
 
             var navInbox = CreateTopBarNav(topBar.transform, "NavInbox", 0);
             var navMap = CreateTopBarNav(topBar.transform, "NavMap", 1);
@@ -161,7 +161,7 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(0, DialogueStripLayout.BottomPad), new Vector2(0, 0), UiTheme.PanelFill);
             UiTheme.CreateHairline(dialoguePanel.transform, "DialogueTopEdge",
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
-                new Vector2(0, 2), UiTheme.Primary);
+                new Vector2(0, 1), UiTheme.Accent);
 
             var portraitGo = new GameObject("Portrait", typeof(RectTransform), typeof(Image));
             portraitGo.transform.SetParent(dialoguePanel.transform, false);
@@ -175,9 +175,11 @@ namespace ElonLifeSim.Unity.UI
             portraitImg.color = Color.white;
             portraitImg.preserveAspect = true;
             portraitImg.raycastTarget = false;
+            UiTheme.ApplyPointFilter(portraitImg);
 
             var speaker = UiTheme.CreateText(dialoguePanel.transform, "Speaker", "Speaker",
                 UiStyleTokens.PanelTitleFontSize, new Vector2(118, -12), new Vector2(400, 24), TextAnchor.UpperLeft);
+            speaker.color = UiTheme.Accent;
             var body = UiTheme.CreateText(dialoguePanel.transform, "Body", "…",
                 UiStyleTokens.BodyFontSize, new Vector2(118, -38), new Vector2(-32, 80), TextAnchor.UpperLeft);
             body.color = UiTheme.Muted;

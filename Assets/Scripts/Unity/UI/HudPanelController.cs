@@ -1,3 +1,5 @@
+using System.Collections;
+using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Services;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,6 +29,8 @@ namespace ElonLifeSim.Unity.UI
         [SerializeField] private Button navStory;
 
         private HudLargePanel _open = HudLargePanel.None;
+        private HudLargePanel _shown = HudLargePanel.None;
+        private Coroutine _motion;
 
         public HudLargePanel OpenPanel => _open;
 
@@ -58,8 +62,9 @@ namespace ElonLifeSim.Unity.UI
             storyPanel = story;
             dimOverlay = overlay;
             _open = HudLargePanel.None;
+            _shown = HudLargePanel.None;
             WireOverlay();
-            Apply();
+            ApplyImmediate();
         }
 
         public void BindNav(Button inbox, Button map, Button companies, Button story)
@@ -131,6 +136,23 @@ namespace ElonLifeSim.Unity.UI
 
         public void Apply()
         {
+            ApplyNavHighlight();
+            if (topBar != null)
+                topBar.SetActive(true);
+
+            if (!isActiveAndEnabled)
+            {
+                ApplyImmediate();
+                return;
+            }
+
+            if (_motion != null)
+                StopCoroutine(_motion);
+            _motion = StartCoroutine(Transition());
+        }
+
+        private void ApplyImmediate()
+        {
             Set(inboxPanel, _open == HudLargePanel.Inbox);
             Set(mapPanel, _open == HudLargePanel.Map);
             Set(companiesPanel, _open == HudLargePanel.Companies);
@@ -138,10 +160,102 @@ namespace ElonLifeSim.Unity.UI
             Set(menuPanel, _open == HudLargePanel.Menu);
             Set(storyPanel, _open == HudLargePanel.Story);
             Set(dimOverlay, _open != HudLargePanel.None);
+            SnapAlpha(inboxPanel, _open == HudLargePanel.Inbox ? 1f : 0f);
+            SnapAlpha(mapPanel, _open == HudLargePanel.Map ? 1f : 0f);
+            SnapAlpha(companiesPanel, _open == HudLargePanel.Companies ? 1f : 0f);
+            SnapAlpha(resolvePanel, _open == HudLargePanel.Resolve ? 1f : 0f);
+            SnapAlpha(menuPanel, _open == HudLargePanel.Menu ? 1f : 0f);
+            SnapAlpha(storyPanel, _open == HudLargePanel.Story ? 1f : 0f);
+            SnapAlpha(dimOverlay, _open != HudLargePanel.None ? 1f : 0f);
+            RaiseChrome();
+            _shown = _open;
+            ApplyNavHighlight();
+        }
 
-            if (topBar != null)
-                topBar.SetActive(true);
+        private IEnumerator Transition()
+        {
+            var next = _open;
+            var prev = _shown;
+            float d = UiStyleTokens.PanelMotionSeconds;
 
+            if (prev != HudLargePanel.None && prev != next)
+            {
+                var leaving = SheetFor(prev);
+                yield return Fade(leaving, 1f, 0f, d, slide: true);
+                Set(leaving, false);
+            }
+
+            bool dim = next != HudLargePanel.None;
+            if (dimOverlay != null)
+            {
+                if (dim && !dimOverlay.activeSelf)
+                {
+                    Set(dimOverlay, true);
+                    yield return Fade(dimOverlay, 0f, 1f, d, slide: false);
+                }
+                else if (!dim && dimOverlay.activeSelf)
+                {
+                    yield return Fade(dimOverlay, 1f, 0f, d, slide: false);
+                    Set(dimOverlay, false);
+                }
+            }
+
+            if (next != HudLargePanel.None && next != prev)
+            {
+                var sheet = SheetFor(next);
+                Set(sheet, true);
+                RaiseChrome();
+                yield return Fade(sheet, 0f, 1f, d, slide: true);
+            }
+
+            RaiseChrome();
+            _shown = next;
+            _motion = null;
+        }
+
+        private IEnumerator Fade(GameObject go, float from, float to, float duration, bool slide)
+        {
+            if (go == null)
+                yield break;
+            var cg = go.GetComponent<CanvasGroup>();
+            if (cg == null)
+                cg = go.AddComponent<CanvasGroup>();
+            var rt = go.GetComponent<RectTransform>();
+            Vector2 rest = rt != null ? rt.anchoredPosition : Vector2.zero;
+            float t = 0f;
+            if (duration < 0.01f)
+                duration = 0.12f;
+            while (t < duration)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                k = k * k * (3f - 2f * k);
+                cg.alpha = Mathf.Lerp(from, to, k);
+                if (slide && rt != null)
+                {
+                    float slideK = to > from ? 1f - k : k;
+                    rt.anchoredPosition = rest + new Vector2(0f, UiStyleTokens.PanelSlidePixels * slideK);
+                }
+                yield return null;
+            }
+
+            cg.alpha = to;
+            if (rt != null)
+                rt.anchoredPosition = rest;
+        }
+
+        private static void SnapAlpha(GameObject go, float alpha)
+        {
+            if (go == null)
+                return;
+            var cg = go.GetComponent<CanvasGroup>();
+            if (cg == null)
+                cg = go.AddComponent<CanvasGroup>();
+            cg.alpha = alpha;
+        }
+
+        private void RaiseChrome()
+        {
             if (_open != HudLargePanel.None)
             {
                 if (dimOverlay != null)
@@ -151,11 +265,8 @@ namespace ElonLifeSim.Unity.UI
                     sheet.transform.SetAsLastSibling();
             }
 
-            // Nav stays clickable above the dimmer so the player can switch sheets.
             if (topBar != null)
                 topBar.transform.SetAsLastSibling();
-
-            ApplyNavHighlight();
         }
 
         private void ApplyNavHighlight()

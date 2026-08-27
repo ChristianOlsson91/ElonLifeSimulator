@@ -94,7 +94,10 @@ namespace ElonLifeSim.Unity.UI
                 var go = new GameObject($"ProblemChoice_{i}", typeof(RectTransform), typeof(Image), typeof(Button));
                 go.transform.SetParent(choicesRoot, false);
                 var rt = go.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(520, 44);
+                rt.sizeDelta = new Vector2(0, 52);
+                var le = go.AddComponent<LayoutElement>();
+                le.minHeight = 52;
+                le.preferredHeight = 52;
                 var img = go.GetComponent<Image>();
                 var btn = go.GetComponent<Button>();
                 var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));

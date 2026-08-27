@@ -26,7 +26,8 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         public void EnsureBuilt()
         {
-            EnsureCamera(UiTheme.ScreenBackground);
+            var palette = WorldBackdropTokens.Pretoria();
+            EnsureCamera(new Color(palette.SkyR, palette.SkyG, palette.SkyB, 1f));
 
             if (FindFirstObjectByType<MainMenuController>() != null &&
                 FindFirstObjectByType<Canvas>() != null)
@@ -44,7 +45,9 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void BuildMenu()
         {
-            EnsureCamera(UiTheme.ScreenBackground);
+            var palette = WorldBackdropTokens.Pretoria();
+            var sky = new Color(palette.SkyR, palette.SkyG, palette.SkyB, 1f);
+            EnsureCamera(sky);
 
             var canvasGo = UiTheme.CreateCanvas("MainMenuCanvas", 100);
 
@@ -55,30 +58,51 @@ namespace ElonLifeSim.Unity.Bootstrap
                 es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
             }
 
-            UiTheme.CreateFullBleed(canvasGo.transform, "MenuBackground", UiTheme.ScreenBackground);
+            UiTheme.CreateFullBleed(canvasGo.transform, "MenuSky", sky);
+
+            var ground = UiTheme.CreateFullBleed(canvasGo.transform, "MenuGround",
+                new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f));
+            var gRt = ground.rectTransform;
+            gRt.anchorMin = new Vector2(0f, 0f);
+            gRt.anchorMax = new Vector2(1f, 0.32f);
+
+            var horizon = UiTheme.CreateHairline(canvasGo.transform, "MenuHorizon",
+                new Vector2(0f, 0.32f), new Vector2(1f, 0.32f), new Vector2(0.5f, 0.5f),
+                new Vector2(0f, 2f), new Color(palette.HorizonR, palette.HorizonG, palette.HorizonB, 1f));
+            _ = horizon;
+
+            var vignetteTop = UiTheme.CreateFullBleed(canvasGo.transform, "MenuVignetteTop",
+                new Color(0f, 0f, 0f, 0.38f));
+            var vRt = vignetteTop.rectTransform;
+            vRt.anchorMin = new Vector2(0f, 0.72f);
+            vRt.anchorMax = new Vector2(1f, 1f);
+
+            var vignetteSide = UiTheme.CreateFullBleed(canvasGo.transform, "MenuVignetteLeft",
+                new Color(0f, 0f, 0f, 0.22f));
+            var sRt = vignetteSide.rectTransform;
+            sRt.anchorMin = new Vector2(0f, 0f);
+            sRt.anchorMax = new Vector2(0.12f, 1f);
 
             UiTheme.CreateHairline(canvasGo.transform, "MenuAccent",
                 new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f),
-                new Vector2(4f, 0f), UiTheme.Primary);
+                new Vector2(3f, 0f), UiTheme.Accent);
 
-            UiTheme.CreateHairline(canvasGo.transform, "MenuTopLine",
-                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, 2f), UiTheme.Primary);
-
-            var title = UiTheme.CreateCenteredText(canvasGo.transform, "Title", UiStyleTokens.GameTitle,
-                UiStyleTokens.TitleFontSize, new Vector2(-80f, 118f), new Vector2(820f, 64f));
+            var title = UiTheme.CreateCenteredText(canvasGo.transform, "Title", TitleScreenCopy.Title,
+                UiStyleTokens.TitleFontSize, new Vector2(-120f, 132f), new Vector2(780f, 56f));
             title.color = UiTheme.Title;
+            title.font = UiTheme.DisplayFont();
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-            var subtitle = UiTheme.CreateCenteredText(canvasGo.transform, "Subtitle", UiStyleTokens.GameSubtitle,
-                UiStyleTokens.SubtitleFontSize, new Vector2(-80f, 62f), new Vector2(720f, 32f));
-            subtitle.color = UiTheme.Muted;
+            var subtitle = UiTheme.CreateCenteredText(canvasGo.transform, "Subtitle", TitleScreenCopy.Tagline,
+                UiStyleTokens.SubtitleFontSize, new Vector2(-120f, 78f), new Vector2(720f, 28f));
+            subtitle.color = UiTheme.Accent;
 
             var primaryW = 280f;
             UiTheme.CreateButton(
                 canvasGo.transform,
                 "NewGameButton",
-                "New Game",
-                new Vector2(-80f, -16f),
+                TitleScreenCopy.PrimaryCta,
+                new Vector2(-120f, -8f),
                 new Vector2(primaryW, UiStyleTokens.PrimaryButtonHeight),
                 primary: true,
                 new Vector2(0.5f, 0.5f),
@@ -87,8 +111,8 @@ namespace ElonLifeSim.Unity.Bootstrap
             UiTheme.CreateButton(
                 canvasGo.transform,
                 "QuitButton",
-                "Quit",
-                new Vector2(-80f, -16f - UiStyleTokens.PrimaryButtonHeight - UiStyleTokens.ButtonGap - 4),
+                TitleScreenCopy.SecondaryCta,
+                new Vector2(-120f, -8f - UiStyleTokens.PrimaryButtonHeight - UiStyleTokens.ButtonGap),
                 new Vector2(primaryW, UiStyleTokens.SecondaryButtonHeight),
                 primary: false,
                 new Vector2(0.5f, 0.5f),
@@ -108,7 +132,7 @@ namespace ElonLifeSim.Unity.Bootstrap
 
             var footer = UiTheme.CreateCenteredText(canvasGo.transform, "Footer", UiStyleTokens.FooterLabel,
                 UiStyleTokens.CaptionFontSize, Vector2.zero, new Vector2(480f, 24f));
-            footer.color = new Color(UiStyleTokens.MutedR, UiStyleTokens.MutedG, UiStyleTokens.MutedB, 0.55f);
+            footer.color = new Color(UiStyleTokens.MutedR, UiStyleTokens.MutedG, UiStyleTokens.MutedB, 0.45f);
             var footerRt = footer.rectTransform;
             footerRt.anchorMin = new Vector2(0.5f, 0f);
             footerRt.anchorMax = new Vector2(0.5f, 0f);
@@ -137,6 +161,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             img.preserveAspect = true;
             img.raycastTarget = false;
             img.color = Color.white;
+            UiTheme.ApplyPointFilter(img);
         }
 
         private static void EnsureCamera(Color background)

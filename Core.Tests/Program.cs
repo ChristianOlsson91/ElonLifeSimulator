@@ -72,6 +72,9 @@ namespace ElonLifeSim.Core.Tests
             Run("HudNavHighlight_AndSheetCloseToWorld", TestHudNavHighlightAndSheetClose);
             Run("DialogueStrip_StaysBelowTopBar", TestDialogueStripBelowTopBar);
             Run("HudSource_WiresTopBarAndBackdrop", TestHudSourceWiresLayout);
+            Run("UiTokens_AaaPaletteTypeMotionDimFilter", TestAaaThemeTokens);
+            Run("TitleScreen_TaglineAndCtas", TestTitleScreenCopy);
+            Run("WorldBackdrop_HorizonLineAndVignette", TestWorldHorizonLine);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -800,6 +803,54 @@ namespace ElonLifeSim.Core.Tests
             Assert(UiStyleTokens.TopBarScreenPadding >= 12, "screen padding");
             Assert(UiStyleTokens.TopBarHeight <= 52, "top bar not thick");
             Assert(UiStyleTokens.ActiveNavG != UiStyleTokens.SecondaryG, "active nav color distinct");
+            Assert(UiStyleTokens.HasTypeScale(), "type scale 12/14/16/22/36");
+            Assert(UiStyleTokens.PaddingInRange(), "padding 16-24");
+            Assert(UiStyleTokens.PanelMotionInRange(), "motion 120-180ms");
+            Assert(UiStyleTokens.OverlayDimInRange(), "resolve dim 70-80%");
+            Assert(UiStyleTokens.PanelIsNearBlack(), "panel near-black");
+            Assert(UiStyleTokens.PrimaryIsNotUnityBlue(), "not Unity default blue");
+            Assert(UiStyleTokens.UsesPointFilter(), "point filter documented");
+        }
+
+        private static void TestAaaThemeTokens()
+        {
+            Assert(UiStyleTokens.CaptionFontSize == 12, "12");
+            Assert(UiStyleTokens.BodyFontSize == 14, "14");
+            Assert(UiStyleTokens.UiFontSize == 16, "16");
+            Assert(UiStyleTokens.PanelTitleFontSize == 22, "22");
+            Assert(UiStyleTokens.TitleFontSize == 36, "36");
+            Assert(UiStyleTokens.DangerR > UiStyleTokens.DangerG, "danger reads red");
+            Assert(UiStyleTokens.DisabledA < 1f, "disabled is faded");
+            Assert(UiStyleTokens.PanelBorderR > 0.3f, "highlight edge exists");
+            Assert(UiStyleTokens.AccentR > UiStyleTokens.AccentB, "accent is warm brass, not blue");
+            Assert(UiStyleTokens.PanelMotionSeconds >= 0.12f && UiStyleTokens.PanelMotionSeconds <= 0.18f,
+                "fade " + UiStyleTokens.PanelMotionSeconds);
+            Assert(UiStyleTokens.OverlayA >= 0.70f && UiStyleTokens.OverlayA <= 0.80f,
+                "overlay " + UiStyleTokens.OverlayA);
+            Assert(UiStyleTokens.HoverScale > 1f, "hover scale");
+            Assert(UiStyleTokens.SpriteFilterModePoint == 0, "Point = 0");
+            Assert(UiStyleTokens.SpriteFilterModeBilinear == 1, "Bilinear = 1");
+            Assert(!UiStyleTokens.IsUnityDefaultButtonBlue(UiStyleTokens.PrimaryR, UiStyleTokens.PrimaryG, UiStyleTokens.PrimaryB),
+                "primary fill is not (0.26,0.52,0.96)");
+        }
+
+        private static void TestTitleScreenCopy()
+        {
+            Assert(TitleScreenCopy.Tagline == "From Pretoria to Mars", "tagline");
+            Assert(TitleScreenCopy.PrimaryCta == "New Game", "primary CTA");
+            Assert(TitleScreenCopy.SecondaryCta == "Quit", "secondary CTA");
+            Assert(TitleScreenCopy.IsValidTitleScreen(), "valid title screen");
+            Assert(!TitleScreenCopy.IsPlaceholder(TitleScreenCopy.Title), "title not placeholder");
+            Assert(!TitleScreenCopy.IsPlaceholder(TitleScreenCopy.Tagline), "tagline not placeholder");
+        }
+
+        private static void TestWorldHorizonLine()
+        {
+            Assert(WorldBackdropTokens.HasHorizonLine(), "horizon line token");
+            Assert(WorldBackdropTokens.HorizonLineName == "HorizonLine", "line name");
+            Assert(WorldBackdropTokens.VignetteName == "Vignette", "vignette name");
+            var p = WorldBackdropTokens.Pretoria();
+            Assert(WorldBackdropTokens.IsDesignedBackdrop(p), "composed pretora");
         }
 
         private static void TestTopBarLayoutNoClip()
@@ -906,6 +957,30 @@ namespace ElonLifeSim.Core.Tests
             Assert(inbox.IndexOf("hud.Close()", StringComparison.Ordinal) >= 0, "Inbox Close dismisses");
             Assert(inbox.IndexOf("hud.Open(HudLargePanel.Menu)", StringComparison.Ordinal) < 0,
                 "Inbox Close does not dump into Esc menu");
+
+            string menu = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Bootstrap", "MainMenuSceneSetup.cs"));
+            Assert(menu.IndexOf("TitleScreenCopy.Title", StringComparison.Ordinal) >= 0, "title wired");
+            Assert(menu.IndexOf("TitleScreenCopy.Tagline", StringComparison.Ordinal) >= 0, "tagline wired");
+            Assert(menu.IndexOf("NewGameButton", StringComparison.Ordinal) >= 0, "New Game button");
+            Assert(menu.IndexOf("QuitButton", StringComparison.Ordinal) >= 0, "Quit button");
+            Assert(menu.IndexOf("MenuSky", StringComparison.Ordinal) >= 0, "composed sky");
+            Assert(menu.IndexOf("MenuGround", StringComparison.Ordinal) >= 0, "composed ground");
+            Assert(menu.IndexOf("\"PLACEHOLDER\"", StringComparison.Ordinal) < 0, "no PLACEHOLDER copy");
+
+            string hudCtrl = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "HudPanelController.cs"));
+            Assert(hudCtrl.IndexOf("PanelMotionSeconds", StringComparison.Ordinal) >= 0, "sheets fade with token duration");
+            Assert(hudCtrl.IndexOf("IEnumerator Transition", StringComparison.Ordinal) >= 0, "no pop-in");
+
+            string hover = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "UiHoverAffordance.cs"));
+            Assert(hover.IndexOf("HoverScale", StringComparison.Ordinal) >= 0, "hover scale");
+
+            Assert(setup.IndexOf("HorizonLineName", StringComparison.Ordinal) >= 0, "horizon line in world");
+            Assert(setup.IndexOf("VignetteName", StringComparison.Ordinal) >= 0, "vignette in world");
+            Assert(setup.IndexOf("DebugLocationJump.Ensure", StringComparison.Ordinal) >= 0, "F1-F5 still ensured");
+            Assert(setup.IndexOf("FilterMode.Point", StringComparison.Ordinal) >= 0
+                   || File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Characters", "ElonSpriteCatalog.cs"))
+                       .IndexOf("FilterMode.Point", StringComparison.Ordinal) >= 0,
+                "point filter on sprites");
         }
 
         private static string FindRepoRoot()

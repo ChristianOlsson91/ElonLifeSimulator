@@ -33,16 +33,37 @@ namespace ElonLifeSim.Unity.UI
         public static Color Muted =>
             new Color(UiStyleTokens.MutedR, UiStyleTokens.MutedG, UiStyleTokens.MutedB, 1f);
 
-        public static Color Border => new Color(0.28f, 0.38f, 0.46f, 0.85f);
+        public static Color Accent =>
+            new Color(UiStyleTokens.AccentR, UiStyleTokens.AccentG, UiStyleTokens.AccentB, 1f);
+
+        public static Color Danger =>
+            new Color(UiStyleTokens.DangerR, UiStyleTokens.DangerG, UiStyleTokens.DangerB, 1f);
+
+        public static Color Disabled =>
+            new Color(UiStyleTokens.DisabledR, UiStyleTokens.DisabledG, UiStyleTokens.DisabledB, UiStyleTokens.DisabledA);
+
+        public static Color Border =>
+            new Color(UiStyleTokens.PanelBorderR, UiStyleTokens.PanelBorderG, UiStyleTokens.PanelBorderB, UiStyleTokens.PanelBorderA);
 
         public static Font UiFont()
         {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var font = Font.CreateDynamicFontFromOSFont(
+                new[] { UiStyleTokens.UiFontFamily, "Segoe UI", "Arial", "Helvetica" },
+                UiStyleTokens.UiFontSize);
+            if (font != null)
+                return font;
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (font == null)
                 font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            if (font == null)
-                font = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Arial", "Helvetica" }, 16);
             return font;
+        }
+
+        public static Font DisplayFont()
+        {
+            var font = Font.CreateDynamicFontFromOSFont(
+                new[] { UiStyleTokens.DisplayFontFamily, "Times New Roman", "Palatino Linotype", "Garamond", "Georgia" },
+                UiStyleTokens.TitleFontSize);
+            return font != null ? font : UiFont();
         }
 
         public static Color ActiveNav =>
@@ -52,17 +73,17 @@ namespace ElonLifeSim.Unity.UI
         {
             var normal = primary ? Primary : Secondary;
             var hover = primary
-                ? new Color(0.20f, 0.58f, 0.62f, 1f)
-                : new Color(0.26f, 0.28f, 0.36f, 1f);
+                ? new Color(0.22f, 0.18f, 0.12f, 1f)
+                : new Color(0.16f, 0.16f, 0.18f, 1f);
             var pressed = primary
-                ? new Color(0.10f, 0.34f, 0.38f, 1f)
-                : new Color(0.12f, 0.14f, 0.18f, 1f);
+                ? new Color(0.08f, 0.07f, 0.05f, 1f)
+                : new Color(0.05f, 0.05f, 0.06f, 1f);
             var block = ColorBlock.defaultColorBlock;
             block.normalColor = normal;
             block.highlightedColor = hover;
             block.selectedColor = hover;
             block.pressedColor = pressed;
-            block.disabledColor = new Color(normal.r, normal.g, normal.b, 0.35f);
+            block.disabledColor = Disabled;
             block.colorMultiplier = 1f;
             block.fadeDuration = 0.08f;
             return block;
@@ -74,10 +95,10 @@ namespace ElonLifeSim.Unity.UI
                 return ColorBlockFor(false);
             var block = ColorBlock.defaultColorBlock;
             block.normalColor = ActiveNav;
-            block.highlightedColor = new Color(0.22f, 0.58f, 0.54f, 1f);
+            block.highlightedColor = new Color(0.36f, 0.28f, 0.14f, 1f);
             block.selectedColor = ActiveNav;
-            block.pressedColor = new Color(0.10f, 0.34f, 0.32f, 1f);
-            block.disabledColor = new Color(ActiveNav.r, ActiveNav.g, ActiveNav.b, 0.35f);
+            block.pressedColor = new Color(0.16f, 0.12f, 0.06f, 1f);
+            block.disabledColor = Disabled;
             block.colorMultiplier = 1f;
             block.fadeDuration = 0.08f;
             return block;
@@ -93,8 +114,8 @@ namespace ElonLifeSim.Unity.UI
             {
                 if (outline == null)
                     outline = btn.gameObject.AddComponent<Outline>();
-                outline.effectColor = new Color(0.55f, 0.88f, 0.82f, 0.95f);
-                outline.effectDistance = new Vector2(1.5f, -1.5f);
+                outline.effectColor = Accent;
+                outline.effectDistance = new Vector2(1f, -1f);
                 outline.enabled = true;
             }
             else if (outline != null)
@@ -138,6 +159,9 @@ namespace ElonLifeSim.Unity.UI
             var btn = img.gameObject.AddComponent<Button>();
             btn.targetGraphic = img;
             btn.transition = Selectable.Transition.None;
+            var cg = img.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = 1f;
+            cg.blocksRaycasts = true;
             return img.gameObject;
         }
 
@@ -185,6 +209,13 @@ namespace ElonLifeSim.Unity.UI
             var outline = go.AddComponent<Outline>();
             outline.effectColor = Border;
             outline.effectDistance = new Vector2(1f, -1f);
+            var shadow = go.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+            shadow.effectDistance = new Vector2(0f, -2f);
+            go.AddComponent<CanvasGroup>();
+            CreateHairline(go.transform, "HighlightEdge",
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, 1f), new Color(Border.r, Border.g, Border.b, 0.55f));
             return go;
         }
 
@@ -198,7 +229,7 @@ namespace ElonLifeSim.Unity.UI
             aRt.pivot = new Vector2(0, 0.5f);
             aRt.sizeDelta = new Vector2(3f, 0);
             aRt.anchoredPosition = Vector2.zero;
-            accent.GetComponent<Image>().color = Primary;
+            accent.GetComponent<Image>().color = Accent;
             accent.GetComponent<Image>().raycastTarget = false;
 
             titleText = CreateText(panel.transform, "Title", title, UiStyleTokens.PanelTitleFontSize,
@@ -216,7 +247,7 @@ namespace ElonLifeSim.Unity.UI
             rRt.pivot = new Vector2(0.5f, 1);
             rRt.anchoredPosition = new Vector2(0, -UiStyleTokens.HeaderHeight + 2);
             rRt.sizeDelta = new Vector2(-32, 1);
-            rule.GetComponent<Image>().color = new Color(Primary.r, Primary.g, Primary.b, 0.45f);
+            rule.GetComponent<Image>().color = new Color(Accent.r, Accent.g, Accent.b, 0.45f);
             rule.GetComponent<Image>().raycastTarget = false;
 
             var close = CreateButton(
@@ -256,10 +287,15 @@ namespace ElonLifeSim.Unity.UI
             img.color = Color.white;
             img.raycastTarget = true;
 
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = primary ? Accent : Border;
+            outline.effectDistance = new Vector2(1f, -1f);
+
             var btn = go.GetComponent<Button>();
             btn.targetGraphic = img;
             btn.transition = Selectable.Transition.ColorTint;
             btn.colors = ColorBlockFor(primary);
+            go.AddComponent<UiHoverAffordance>();
 
             var fontSize = primary ? UiStyleTokens.PrimaryButtonFontSize : UiStyleTokens.SecondaryButtonFontSize;
             if (size.y <= UiStyleTokens.TopBarButtonHeight + 1)
@@ -285,7 +321,7 @@ namespace ElonLifeSim.Unity.UI
             rt.anchoredPosition = pos;
             rt.sizeDelta = dim;
             var t = go.GetComponent<Text>();
-            t.font = UiFont();
+            t.font = size >= UiStyleTokens.Type22 ? DisplayFont() : UiFont();
             t.text = content;
             t.fontSize = size;
             t.color = Title;
@@ -330,6 +366,29 @@ namespace ElonLifeSim.Unity.UI
                 label.color = Title;
                 label.fontSize = UiStyleTokens.BodyFontSize;
             }
+            var outline = img.GetComponent<Outline>();
+            if (outline == null)
+                outline = img.gameObject.AddComponent<Outline>();
+            outline.effectColor = Border;
+            outline.effectDistance = new Vector2(1f, -1f);
+            if (img.GetComponent<UiHoverAffordance>() == null)
+                img.gameObject.AddComponent<UiHoverAffordance>();
+        }
+
+        public static void ApplyPointFilter(Image image)
+        {
+            if (image == null || image.sprite == null || image.sprite.texture == null)
+                return;
+            image.sprite.texture.filterMode = FilterMode.Point;
+            image.sprite.texture.wrapMode = TextureWrapMode.Clamp;
+        }
+
+        public static void ApplyPointFilter(SpriteRenderer renderer)
+        {
+            if (renderer == null || renderer.sprite == null || renderer.sprite.texture == null)
+                return;
+            renderer.sprite.texture.filterMode = FilterMode.Point;
+            renderer.sprite.texture.wrapMode = TextureWrapMode.Clamp;
         }
     }
 }

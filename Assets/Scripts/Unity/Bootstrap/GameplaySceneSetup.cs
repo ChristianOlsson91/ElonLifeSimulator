@@ -112,12 +112,42 @@ namespace ElonLifeSim.Unity.Bootstrap
             groundColor = new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f);
 
             var root = new GameObject(WorldBackdropTokens.BackdropRootName);
+            CreateBand(root.transform, WorldBackdropTokens.SoftSkyName,
+                new Color(palette.SkyR + 0.04f, palette.SkyG + 0.03f, palette.SkyB + 0.02f, 1f),
+                1.15f, 28f, 5.2f, -25);
             CreateBand(root.transform, WorldBackdropTokens.HorizonName,
                 new Color(palette.HorizonR, palette.HorizonG, palette.HorizonB, 1f),
                 palette.HorizonY, 28f, palette.HorizonHeight, -15);
+            CreateBand(root.transform, WorldBackdropTokens.HorizonLineName,
+                new Color(0.62f, 0.42f, 0.28f, 1f),
+                palette.GroundTop + WorldBackdropTokens.HorizonLineHeight * 0.5f,
+                28f, WorldBackdropTokens.HorizonLineHeight, -14);
             CreateBand(root.transform, WorldBackdropTokens.GroundName,
                 new Color(palette.GroundR, palette.GroundG, palette.GroundB, 1f),
                 palette.GroundY, 28f, palette.GroundHeight, -20);
+            CreateVignette(root.transform);
+        }
+
+        private static void CreateVignette(Transform parent)
+        {
+            float a = WorldBackdropTokens.VignetteAlpha;
+            var dark = new Color(0.01f, 0.015f, 0.03f, 1f);
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Top", dark, 4.4f, 28f, 2.2f, 8);
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Left", dark, 0.4f, 6f, 10f, 8);
+            CreateBand(parent, WorldBackdropTokens.VignetteName + "Right", dark, 0.4f, 6f, 10f, 8);
+            var left = parent.Find(WorldBackdropTokens.VignetteName + "Left");
+            if (left != null)
+                left.position = new Vector3(-7.4f, 0.4f, 0f);
+            var right = parent.Find(WorldBackdropTokens.VignetteName + "Right");
+            if (right != null)
+                right.position = new Vector3(7.4f, 0.4f, 0f);
+            var top = parent.Find(WorldBackdropTokens.VignetteName + "Top");
+            if (top != null)
+            {
+                var sr = top.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                    sr.color = new Color(dark.r, dark.g, dark.b, a);
+            }
         }
 
         private static void DestroyIfPresent(string name)
@@ -135,6 +165,7 @@ namespace ElonLifeSim.Unity.Bootstrap
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateSolidSprite(color, 64, 64);
             sr.sortingOrder = sort;
+            UiTheme.ApplyPointFilter(sr);
             const float spriteWorld = 64f / 16f;
             go.transform.localScale = new Vector3(width / spriteWorld, height / spriteWorld, 1f);
         }
