@@ -49,12 +49,18 @@ namespace ElonLifeSim.Unity.UI
             if (portraitImage == null) return;
             var session = GameBootstrap.RequireSession();
             var loc = session?.Travel.CurrentLocationId ?? PrototypeContent.LocationPretoria;
+            var speaker = _runner != null && _runner.CurrentLine != null ? _runner.CurrentLine.Speaker : "";
+            var key = DialoguePortrait.ResourceKey(speaker, loc);
             var sprite = ElonSpriteCatalog.LoadPortrait(loc);
+            if (sprite == null && !string.IsNullOrEmpty(key))
+                sprite = ElonSpriteCatalog.LoadSprite(key);
             if (sprite != null)
             {
                 portraitImage.sprite = sprite;
                 portraitImage.preserveAspect = true;
+                portraitImage.enabled = true;
                 portraitImage.gameObject.SetActive(true);
+                UiTheme.ApplyPointFilter(portraitImage);
             }
         }
 
@@ -133,6 +139,7 @@ namespace ElonLifeSim.Unity.UI
                     bodyText.text = line != null ? line.Text : "";
                 if (continueButton != null)
                     continueButton.gameObject.SetActive(true);
+                RefreshPortrait();
             }
         }
 

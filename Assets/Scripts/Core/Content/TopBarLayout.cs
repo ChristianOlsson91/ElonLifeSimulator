@@ -73,6 +73,20 @@ namespace ElonLifeSim.Core.Content
             return new HudRect(x, y, w, ButtonHeight);
         }
 
+        /// <summary>Right-side location word, same row as nav (not a second debug line).</summary>
+        public static HudRect LocationStatus(int canvasWidth = 0)
+        {
+            var cluster = StatusCluster(canvasWidth);
+            return new HudRect(cluster.X, cluster.Y, 140f, cluster.H);
+        }
+
+        /// <summary>Right-side act word, same row as nav.</summary>
+        public static HudRect ActStatus(int canvasWidth = 0)
+        {
+            var cluster = StatusCluster(canvasWidth);
+            return new HudRect(cluster.Right - 190f, cluster.Y, 190f, cluster.H);
+        }
+
         public static float NavClusterRight()
         {
             return NavButton(NavCount - 1).Right;
@@ -102,19 +116,28 @@ namespace ElonLifeSim.Core.Content
         }
     }
 
-    /// <summary>Readable top-bar copy. Not a debug dump.</summary>
+    /// <summary>Readable top-bar copy. HUD, not a debug dump.</summary>
     public static class HudStatusCopy
     {
         public static string LocationLine(string displayName)
         {
-            return string.IsNullOrEmpty(displayName) ? "" : displayName;
+            if (string.IsNullOrEmpty(displayName))
+                return "Pretoria";
+            if (displayName.IndexOf("Toronto", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Toronto";
+            if (displayName.IndexOf("Palo", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Palo Alto";
+            if (displayName.IndexOf("Pretoria", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Pretoria";
+            int comma = displayName.IndexOf(',');
+            return comma > 0 ? displayName.Substring(0, comma).Trim() : displayName;
         }
 
         public static string ActLine(int actNumber, string place)
         {
             if (string.IsNullOrEmpty(place))
                 return "Act " + actNumber;
-            return "Act " + actNumber + ": " + place;
+            return "Act " + actNumber + " · " + place;
         }
 
         public static string ActLineForLocation(string locationId)
@@ -123,11 +146,19 @@ namespace ElonLifeSim.Core.Content
                 return ActLine(2, "Toronto");
             if (locationId == PrototypeContent.LocationPaloAlto)
                 return ActLine(3, "Palo Alto");
-            return ActLine(1, "Pretoria");
+            return ActLine(1, "Home");
+        }
+
+        public static bool LooksLikeDebugStatus(string copy)
+        {
+            if (string.IsNullOrEmpty(copy))
+                return false;
+            return copy.IndexOf("(Story)", System.StringComparison.OrdinalIgnoreCase) >= 0
+                   || copy.IndexOf("Home - Pretoria", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 
-    /// <summary>Dialogue lives in a bottom strip and must stay below the top bar.</summary>
+    /// <summary>Dialogue lives in a cinematic bottom strip, not a half-frame box.</summary>
     public static class DialogueStripLayout
     {
         public static float AnchorMinY => 0f;
@@ -142,6 +173,29 @@ namespace ElonLifeSim.Core.Content
         public static bool OverlapsTopBar()
         {
             return AnchorMaxY >= TopBarBottomNormalized();
+        }
+
+        public static bool IsBottomBand()
+        {
+            return AnchorMinY == 0f && AnchorMaxY > 0.12f && AnchorMaxY <= 0.28f;
+        }
+    }
+
+    /// <summary>Dialogue strip portrait: era Elon from Resources, keyed by speaker + location.</summary>
+    public static class DialoguePortrait
+    {
+        public static string ResourceKey(string speaker, string locationId)
+        {
+            _ = speaker;
+            if (string.IsNullOrEmpty(locationId))
+                locationId = PrototypeContent.LocationPretoria;
+            return ElonEraResolver.PortraitResourceKey(locationId);
+        }
+
+        public static bool UsesShippedEraPortrait(string speaker, string locationId)
+        {
+            return ResourceKey(speaker, locationId) == ElonEraResolver.PortraitResourceKey(
+                string.IsNullOrEmpty(locationId) ? PrototypeContent.LocationPretoria : locationId);
         }
     }
 

@@ -115,6 +115,9 @@ namespace ElonLifeSim.Unity.Bootstrap
             CreateBand(root.transform, WorldBackdropTokens.SoftSkyName,
                 new Color(palette.SkyR + 0.04f, palette.SkyG + 0.03f, palette.SkyB + 0.02f, 1f),
                 1.15f, 28f, 5.2f, -25);
+            CreateBand(root.transform, WorldBackdropTokens.WallName,
+                new Color(WorldBackdropTokens.WallR, WorldBackdropTokens.WallG, WorldBackdropTokens.WallB, 1f),
+                WorldBackdropTokens.WallY(palette), 28f, WorldBackdropTokens.WallHeight, -18);
             CreateBand(root.transform, WorldBackdropTokens.HorizonName,
                 new Color(palette.HorizonR, palette.HorizonG, palette.HorizonB, 1f),
                 palette.HorizonY, 28f, palette.HorizonHeight, -15);

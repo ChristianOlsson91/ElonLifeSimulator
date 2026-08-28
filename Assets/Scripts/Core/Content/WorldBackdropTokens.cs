@@ -56,9 +56,14 @@ namespace ElonLifeSim.Core.Content
         public const string GroundName = "Ground";
         public const string HorizonName = "Horizon";
         public const string HorizonLineName = "HorizonLine";
+        public const string WallName = "Wall";
         public const string VignetteName = "Vignette";
         public const string SoftSkyName = "SoftSky";
         public const float HorizonLineHeight = 0.07f;
+        public const float WallHeight = 2.40f;
+        public const float WallR = 0.145f;
+        public const float WallG = 0.110f;
+        public const float WallB = 0.095f;
         public const float VignetteAlpha = 0.42f;
         /// <summary>Thin edge band in world units. 6wu slabs at ±7.4 covered half the frame.</summary>
         public const float VignetteSideWidth = 1.5f;
@@ -83,8 +88,8 @@ namespace ElonLifeSim.Core.Content
                 0.078f, 0.125f, 0.255f,
                 0.430f, 0.250f, 0.310f,
                 0.275f, 0.215f, 0.135f,
-                -2.75f, 3.70f,
-                -0.72f, 0.44f);
+                -1.60f, 3.20f,
+                0.00f, 0.08f);
         }
 
         public static WorldBackdropPalette Toronto()
@@ -138,6 +143,21 @@ namespace ElonLifeSim.Core.Content
         public static bool HasHorizonLine()
         {
             return HorizonLineName == "HorizonLine" && HorizonLineHeight > 0f && HorizonLineHeight < 0.2f;
+        }
+
+        public static bool HasWall()
+        {
+            return WallName == "Wall" && WallHeight > 1f;
+        }
+
+        public static float WallY(WorldBackdropPalette p)
+        {
+            return p.GroundTop + WallHeight * 0.5f;
+        }
+
+        public static float ActorFeetY(WorldBackdropPalette p)
+        {
+            return p.GroundTop;
         }
 
         public static bool VignetteIsTranslucent()

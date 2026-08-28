@@ -40,28 +40,25 @@ namespace ElonLifeSim.Unity.UI
                 new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(0, -barH), new Vector2(0, 0), UiTheme.TopBarFill);
 
-            UiTheme.CreateHairline(topBar.transform, "TopBarEdge",
-                new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0),
-                new Vector2(0, 1), UiTheme.Accent);
-
             var navInbox = CreateTopBarNav(topBar.transform, "NavInbox", 0);
             var navMap = CreateTopBarNav(topBar.transform, "NavMap", 1);
             var navCompanies = CreateTopBarNav(topBar.transform, "NavCompanies", 2);
             var navStory = CreateTopBarNav(topBar.transform, "NavStory", 3);
 
-            var status = TopBarLayout.StatusCluster();
+            var locRect = TopBarLayout.LocationStatus();
             var locLabel = UiTheme.CreateText(topBar.transform, "LocationLabel",
-                HudStatusCopy.LocationLine("Pretoria, South Africa"),
-                UiStyleTokens.TopBarLabelFontSize, Vector2.zero, new Vector2(status.W, 18), TextAnchor.MiddleRight);
+                HudStatusCopy.LocationLine("Pretoria"),
+                UiStyleTokens.TopBarLabelFontSize, Vector2.zero, new Vector2(locRect.W, locRect.H), TextAnchor.MiddleRight);
             locLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
-            PlaceStatusLine(locLabel.rectTransform, 0);
+            PlaceStatusRect(locLabel.rectTransform, locRect);
 
+            var actRect = TopBarLayout.ActStatus();
             var storyStatus = UiTheme.CreateText(topBar.transform, "StoryStatus",
                 HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria),
-                UiStyleTokens.CaptionFontSize, Vector2.zero, new Vector2(status.W, 16), TextAnchor.MiddleRight);
+                UiStyleTokens.CaptionFontSize, Vector2.zero, new Vector2(actRect.W, actRect.H), TextAnchor.MiddleRight);
             storyStatus.color = UiTheme.Muted;
             storyStatus.horizontalOverflow = HorizontalWrapMode.Overflow;
-            PlaceStatusLine(storyStatus.rectTransform, 1);
+            PlaceStatusRect(storyStatus.rectTransform, actRect);
 
             var inboxPanel = UiTheme.CreateCenteredSheet(canvasGo.transform, "InboxPanel");
             UiTheme.AddSheetHeader(inboxPanel, "Inbox", "InboxClose", out _);
@@ -155,13 +152,19 @@ namespace ElonLifeSim.Unity.UI
             var storyContinue = UiTheme.CreateButton(storyPanel.transform, "StoryContinue", "Continue",
                 new Vector2(20, 14), new Vector2(140, 32), true);
 
-            var dialoguePanel = UiTheme.CreatePanel(canvasGo.transform, "DialoguePanel",
-                new Vector2(0.08f, DialogueStripLayout.AnchorMinY),
-                new Vector2(0.92f, DialogueStripLayout.AnchorMaxY),
-                new Vector2(0, DialogueStripLayout.BottomPad), new Vector2(0, 0), UiTheme.PanelFill);
+            var dialoguePanel = new GameObject("DialoguePanel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+            dialoguePanel.transform.SetParent(canvasGo.transform, false);
+            var dRt = dialoguePanel.GetComponent<RectTransform>();
+            dRt.anchorMin = new Vector2(0f, DialogueStripLayout.AnchorMinY);
+            dRt.anchorMax = new Vector2(1f, DialogueStripLayout.AnchorMaxY);
+            dRt.offsetMin = new Vector2(0f, DialogueStripLayout.BottomPad);
+            dRt.offsetMax = Vector2.zero;
+            var dImg = dialoguePanel.GetComponent<Image>();
+            dImg.color = UiTheme.DialogueFill;
+            dImg.raycastTarget = true;
             UiTheme.CreateHairline(dialoguePanel.transform, "DialogueTopEdge",
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
-                new Vector2(0, 1), UiTheme.Accent);
+                new Vector2(0, 1), new Color(UiTheme.Border.r, UiTheme.Border.g, UiTheme.Border.b, 0.35f));
 
             var portraitGo = new GameObject("Portrait", typeof(RectTransform), typeof(Image));
             portraitGo.transform.SetParent(dialoguePanel.transform, false);
@@ -169,32 +172,33 @@ namespace ElonLifeSim.Unity.UI
             portraitRt.anchorMin = new Vector2(0, 0);
             portraitRt.anchorMax = new Vector2(0, 1);
             portraitRt.pivot = new Vector2(0, 0.5f);
-            portraitRt.anchoredPosition = new Vector2(14, 0);
-            portraitRt.sizeDelta = new Vector2(92, -24);
+            portraitRt.anchoredPosition = new Vector2(16, 0);
+            portraitRt.sizeDelta = new Vector2(88, -20);
             var portraitImg = portraitGo.GetComponent<Image>();
             portraitImg.color = Color.white;
             portraitImg.preserveAspect = true;
             portraitImg.raycastTarget = false;
-            UiTheme.ApplyPointFilter(portraitImg);
 
-            var speaker = UiTheme.CreateText(dialoguePanel.transform, "Speaker", "Speaker",
-                UiStyleTokens.PanelTitleFontSize, new Vector2(118, -12), new Vector2(400, 24), TextAnchor.UpperLeft);
+            var speaker = UiTheme.CreateText(dialoguePanel.transform, "Speaker", "",
+                UiStyleTokens.CaptionFontSize, new Vector2(118, -10), new Vector2(420, 18), TextAnchor.MiddleLeft);
             speaker.color = UiTheme.Accent;
+            speaker.horizontalOverflow = HorizontalWrapMode.Overflow;
             var body = UiTheme.CreateText(dialoguePanel.transform, "Body", "…",
-                UiStyleTokens.BodyFontSize, new Vector2(118, -38), new Vector2(-32, 80), TextAnchor.UpperLeft);
-            body.color = UiTheme.Muted;
-            UiTheme.Stretch(body.rectTransform, new Vector2(0, 0.38f), new Vector2(1, 0.82f),
-                new Vector2(118, 6), new Vector2(-18, -8));
-            var contBtn = UiTheme.CreateButton(dialoguePanel.transform, "ContinueButton", "Continue",
-                new Vector2(-18, 12), new Vector2(120, 32), true, new Vector2(1, 0), new Vector2(1, 0));
+                UiStyleTokens.BodyFontSize, new Vector2(118, -32), new Vector2(-140, 56), TextAnchor.UpperLeft);
+            body.color = UiTheme.Title;
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            UiTheme.Stretch(body.rectTransform, new Vector2(0, 0.36f), new Vector2(1, 0.82f),
+                new Vector2(118, 8), new Vector2(-120, -6));
+            var contBtn = UiTheme.CreateGhostButton(dialoguePanel.transform, "ContinueButton", "Continue",
+                new Vector2(-16, 10), new Vector2(110, 24), new Vector2(1, 0), new Vector2(1, 0));
 
             var choicesRoot = new GameObject("ChoicesRoot", typeof(RectTransform), typeof(VerticalLayoutGroup));
             choicesRoot.transform.SetParent(dialoguePanel.transform, false);
-            UiTheme.Stretch(choicesRoot.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(1, 0.38f),
-                new Vector2(118, 48), new Vector2(-18, 6));
+            UiTheme.Stretch(choicesRoot.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(1, 0.36f),
+                new Vector2(118, 36), new Vector2(-16, 4));
             var vlg = choicesRoot.GetComponent<VerticalLayoutGroup>();
-            vlg.spacing = 6;
-            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.spacing = 4;
+            vlg.childAlignment = TextAnchor.UpperLeft;
             vlg.childControlHeight = false;
             vlg.childControlWidth = true;
 
@@ -273,15 +277,13 @@ namespace ElonLifeSim.Unity.UI
             return btn;
         }
 
-        private static void PlaceStatusLine(RectTransform rt, int line)
+        private static void PlaceStatusRect(RectTransform rt, HudRect rect)
         {
-            var status = TopBarLayout.StatusCluster();
-            rt.anchorMin = new Vector2(1, 1);
-            rt.anchorMax = new Vector2(1, 1);
-            rt.pivot = new Vector2(1, 1);
-            float lineH = line == 0 ? 18f : 16f;
-            rt.sizeDelta = new Vector2(status.W, lineH);
-            rt.anchoredPosition = new Vector2(-TopBarLayout.ScreenPad, -(status.Y + line * 16f));
+            rt.anchorMin = new Vector2(0, 0);
+            rt.anchorMax = new Vector2(0, 0);
+            rt.pivot = new Vector2(0, 0);
+            rt.sizeDelta = new Vector2(rect.W, rect.H);
+            rt.anchoredPosition = new Vector2(rect.X, TopBarLayout.UnityYFromBottom(rect));
         }
 
         private static Button CreateMenuButton(Transform parent, string name, string label, bool primary)

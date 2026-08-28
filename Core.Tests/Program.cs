@@ -77,6 +77,10 @@ namespace ElonLifeSim.Core.Tests
             Run("WorldBackdrop_HorizonLineAndVignette", TestWorldHorizonLine);
             Run("WorldBackdrop_SideVignetteLeavesWorldVisible", TestSideVignetteLeavesWorld);
             Run("HoverOutline_RestoresPrimaryRestAfterHover", TestHoverOutlineRestoresRest);
+            Run("HudStatusCopy_Act1HomeNoDebugSuffix", TestHudStatusCopyAct1Home);
+            Run("DialogueStrip_IsBottomBandNotHalfFrame", TestDialogueStripIsBottomBand);
+            Run("DialoguePortrait_UsesShippedEraKey", TestDialoguePortraitKey);
+            Run("WorldBackdrop_WallAndFeetOnGround", TestWorldWallAndFeet);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -892,6 +896,8 @@ namespace ElonLifeSim.Core.Tests
             Assert(TopBarLayout.NavLabels[0].IndexOf("ibox", StringComparison.Ordinal) < 0, "label is Inbox");
 
             var inbox = TopBarLayout.NavButton(0);
+            Assert(TopBarLayout.ScreenPad >= 16, "left screen padding >= 16");
+            Assert(inbox.X >= 16f, "Inbox 16px from left: x=" + inbox.X);
             Assert(inbox.X >= TopBarLayout.ScreenPad, "Inbox not flush with screen edge: x=" + inbox.X);
             Assert(inbox.W == TopBarLayout.ButtonWidth, "Inbox width");
             Assert(inbox.H == TopBarLayout.ButtonHeight, "Inbox height");
@@ -917,13 +923,30 @@ namespace ElonLifeSim.Core.Tests
 
         private static void TestHudStatusCopy()
         {
-            Assert(HudStatusCopy.ActLine(1, "Pretoria") == "Act 1: Pretoria", "act line");
-            Assert(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria) == "Act 1: Pretoria",
-                "pretoria act");
-            Assert(HudStatusCopy.LocationLine("Pretoria, South Africa") == "Pretoria, South Africa", "location");
+            Assert(HudStatusCopy.ActLine(1, "Home") == "Act 1 · Home", "act line");
+            Assert(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria) == "Act 1 · Home",
+                "pretoria act is Act 1 · Home");
+            Assert(HudStatusCopy.LocationLine("Pretoria, South Africa") == "Pretoria", "location short");
+            Assert(!HudStatusCopy.LooksLikeDebugStatus(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria)),
+                "no (Story) debug suffix");
             Assert(HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria)
-                    .IndexOf("·", StringComparison.Ordinal) < 0,
-                "top-bar act is not a debug list");
+                    .IndexOf("(Story)", StringComparison.Ordinal) < 0,
+                "top-bar act is HUD, not a log");
+        }
+
+        private static void TestHudStatusCopyAct1Home()
+        {
+            string act = HudStatusCopy.ActLineForLocation(PrototypeContent.LocationPretoria);
+            string loc = HudStatusCopy.LocationLine("Pretoria, South Africa");
+            Assert(act == "Act 1 · Home", "exact act copy");
+            Assert(loc == "Pretoria", "exact location copy");
+            Assert(!HudStatusCopy.LooksLikeDebugStatus(act), "act not debug");
+            Assert(!HudStatusCopy.LooksLikeDebugStatus(loc), "loc not debug");
+            var locRect = TopBarLayout.LocationStatus();
+            var actRect = TopBarLayout.ActStatus();
+            Assert(Math.Abs(locRect.Y - actRect.Y) < 0.01f, "status is one row");
+            Assert(Math.Abs(locRect.H - TopBarLayout.NavButton(0).H) < 0.01f, "status same height as nav");
+            Assert(locRect.Right <= actRect.X + 0.01f, "Pretoria sits left of act copy");
         }
 
         private static void TestWorldBackdropPretoria()
@@ -935,7 +958,7 @@ namespace ElonLifeSim.Core.Tests
             Assert(p.SkyB > p.SkyR, "sky is blue-ish dusk");
             Assert(p.GroundR > p.GroundB, "ground is warm earth");
             Assert(p.SkyLuma < p.GroundLuma || p.SkyLuma < 0.18f, "sky stays dark");
-            Assert(p.GroundTop < 0f, "floor under the actor so the body reads against sky");
+            Assert(p.GroundTop <= 0.01f, "floor at the actor's feet");
             Assert(WorldBackdropTokens.BackdropRootName == "WorldBackdrop", "root name");
 
             var toronto = WorldBackdropTokens.ForLocation(PrototypeContent.LocationToronto);
@@ -964,6 +987,40 @@ namespace ElonLifeSim.Core.Tests
             Assert(DialogueStripLayout.AnchorMinY == 0f, "strip sits on the bottom");
         }
 
+        private static void TestDialogueStripIsBottomBand()
+        {
+            Assert(DialogueStripLayout.IsBottomBand(), "strip is a bottom band");
+            Assert(DialogueStripLayout.AnchorMaxY <= 0.28f, "does not occupy half the 720px frame");
+            Assert(DialogueStripLayout.AnchorMaxY < 0.5f, "not a half-frame box");
+            Assert(UiStyleTokens.DialogueFillA < 0.92f, "strip is not a solid black slab");
+            Assert(UiStyleTokens.GhostFillA < 0.15f, "Continue is a ghost fill");
+            Assert(!UiStyleTokens.IsUnityDefaultButtonBlue(UiStyleTokens.GhostFillA, UiStyleTokens.GhostFillA, UiStyleTokens.GhostFillA),
+                "ghost is not Unity blue");
+        }
+
+        private static void TestDialoguePortraitKey()
+        {
+            string maye = DialoguePortrait.ResourceKey("Maye", PrototypeContent.LocationPretoria);
+            string elon = DialoguePortrait.ResourceKey("Young Elon", PrototypeContent.LocationPretoria);
+            string shipped = ElonEraResolver.PortraitResourceKey(PrototypeContent.LocationPretoria);
+            Assert(maye == shipped, "Maye line uses shipped era portrait key");
+            Assert(elon == shipped, "Elon line uses shipped era portrait key");
+            Assert(DialoguePortrait.UsesShippedEraPortrait("Maye", PrototypeContent.LocationPretoria),
+                "portrait helper is not a parallel table");
+            Assert(shipped.IndexOf("elon_young_sa_portrait", StringComparison.Ordinal) >= 0, "Pretoria portrait file");
+        }
+
+        private static void TestWorldWallAndFeet()
+        {
+            Assert(WorldBackdropTokens.HasWall(), "wall band exists");
+            var p = WorldBackdropTokens.Pretoria();
+            Assert(WorldBackdropTokens.ActorFeetY(p) == p.GroundTop, "feet sit on ground top");
+            Assert(p.GroundTop <= 0.01f, "floor is at the actor's feet, not a hovering mid-air origin");
+            Assert(WorldBackdropTokens.WallY(p) > p.GroundTop, "wall stands on the floor");
+            Assert(!WorldBackdropTokens.LooksLikeEditorGray(WorldBackdropTokens.WallR, WorldBackdropTokens.WallG, WorldBackdropTokens.WallB),
+                "wall is not editor gray");
+        }
+
         private static void TestHudSourceWiresLayout()
         {
             string root = FindRepoRoot();
@@ -975,12 +1032,17 @@ namespace ElonLifeSim.Core.Tests
             Assert(hud.IndexOf("HudStatusCopy.ActLineForLocation", StringComparison.Ordinal) >= 0, "act copy wired");
             Assert(hud.IndexOf("DialogueStripLayout", StringComparison.Ordinal) >= 0, "dialogue strip tokens");
             Assert(hud.IndexOf("HUD_Canvas", StringComparison.Ordinal) >= 0, "single HUD canvas name");
+            Assert(hud.IndexOf("CreateGhostButton", StringComparison.Ordinal) >= 0, "Continue is a ghost control");
+            Assert(hud.IndexOf("TopBarEdge", StringComparison.Ordinal) < 0, "no gold top-bar debug strip");
+            Assert(hud.IndexOf("(Story)", StringComparison.Ordinal) < 0, "HUD builder has no (Story) suffix");
 
             string setup = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Bootstrap", "GameplaySceneSetup.cs"));
             Assert(setup.IndexOf("WorldBackdropTokens.ForLocation", StringComparison.Ordinal) >= 0,
                 "scene setup uses backdrop tokens");
             Assert(setup.IndexOf("WorldBackdropTokens.BackdropRootName", StringComparison.Ordinal) >= 0,
                 "named WorldBackdrop root");
+            Assert(setup.IndexOf("WallName", StringComparison.Ordinal) >= 0, "wall band in world setup");
+            Assert(setup.IndexOf("DebugLocationJump.Ensure", StringComparison.Ordinal) >= 0, "F1-F5 still ensured");
 
             string inbox = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "InboxUI.cs"));
             Assert(inbox.IndexOf("hud.Close()", StringComparison.Ordinal) >= 0, "Inbox Close dismisses");
@@ -1002,6 +1064,20 @@ namespace ElonLifeSim.Core.Tests
 
             string hover = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "UiHoverAffordance.cs"));
             Assert(hover.IndexOf("HoverScale", StringComparison.Ordinal) >= 0, "hover scale");
+
+            string dialogue = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "DialogueUI.cs"));
+            Assert(dialogue.IndexOf("LoadPortrait", StringComparison.Ordinal) >= 0, "era portrait loader wired");
+            Assert(dialogue.IndexOf("DialoguePortrait.ResourceKey", StringComparison.Ordinal) >= 0,
+                "speaker portrait uses shipped key");
+
+            string applier = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Characters", "ElonAppearanceApplier.cs"));
+            Assert(applier.IndexOf("ActorFeetY", StringComparison.Ordinal) >= 0
+                   || applier.IndexOf("PlantFeet", StringComparison.Ordinal) >= 0,
+                "player feet planted on ground");
+
+            string theme = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "UiTheme.cs"));
+            Assert(theme.IndexOf("ColorBlockForGhost", StringComparison.Ordinal) >= 0, "ghost ColorBlock exists");
+            Assert(theme.IndexOf("0.26f", StringComparison.Ordinal) < 0, "theme does not hardcode Unity-blue");
             Assert(hover.IndexOf("_restOutline", StringComparison.Ordinal) >= 0, "caches rest outline in Awake");
             Assert(hover.IndexOf("UiStyleTokens.HoverOutline", StringComparison.Ordinal) >= 0,
                 "hover restore uses shipped HoverOutline");

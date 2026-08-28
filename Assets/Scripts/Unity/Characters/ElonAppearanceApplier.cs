@@ -29,6 +29,7 @@ namespace ElonLifeSim.Unity.Characters
 
             controller.ApplyLocation(locationId, actId);
             FitHeight(player);
+            PlantFeet(player, locationId);
             TuneRenderer(player);
 
             var dialogues = Object.FindObjectsByType<DialogueUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -114,6 +115,14 @@ namespace ElonLifeSim.Unity.Characters
                 h = sr.sprite.bounds.size.y;
             if (h > 0.01f)
                 player.transform.localScale = Vector3.one * (TargetWorldHeight / h);
+        }
+
+        private static void PlantFeet(GameObject player, string locationId)
+        {
+            var palette = WorldBackdropTokens.ForLocation(locationId);
+            float feet = WorldBackdropTokens.ActorFeetY(palette);
+            var p = player.transform.position;
+            player.transform.position = new Vector3(p.x, feet, p.z);
         }
     }
 }

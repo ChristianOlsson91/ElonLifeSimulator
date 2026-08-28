@@ -69,6 +69,22 @@ namespace ElonLifeSim.Unity.UI
         public static Color ActiveNav =>
             new Color(UiStyleTokens.ActiveNavR, UiStyleTokens.ActiveNavG, UiStyleTokens.ActiveNavB, 1f);
 
+        public static Color DialogueFill =>
+            new Color(UiStyleTokens.PanelR, UiStyleTokens.PanelG, UiStyleTokens.PanelB, UiStyleTokens.DialogueFillA);
+
+        public static ColorBlock ColorBlockForGhost()
+        {
+            var block = ColorBlock.defaultColorBlock;
+            block.normalColor = new Color(1f, 1f, 1f, UiStyleTokens.GhostFillA);
+            block.highlightedColor = new Color(Accent.r, Accent.g, Accent.b, 0.18f);
+            block.selectedColor = new Color(Accent.r, Accent.g, Accent.b, 0.18f);
+            block.pressedColor = new Color(Accent.r, Accent.g, Accent.b, 0.28f);
+            block.disabledColor = Disabled;
+            block.colorMultiplier = 1f;
+            block.fadeDuration = 0.08f;
+            return block;
+        }
+
         public static ColorBlock ColorBlockFor(bool primary)
         {
             var normal = primary ? Primary : Secondary;
@@ -306,6 +322,32 @@ namespace ElonLifeSim.Unity.UI
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
+            return btn;
+        }
+
+        public static Button CreateGhostButton(
+            Transform parent,
+            string name,
+            string label,
+            Vector2 pos,
+            Vector2 size,
+            Vector2? anchor = null,
+            Vector2? pivot = null)
+        {
+            var btn = CreateButton(parent, name, label, pos, size, primary: false, anchor, pivot);
+            btn.colors = ColorBlockForGhost();
+            var img = btn.GetComponent<Image>();
+            img.color = new Color(1f, 1f, 1f, 1f);
+            var outline = btn.GetComponent<Outline>();
+            if (outline != null)
+                outline.enabled = false;
+            var labelText = btn.GetComponentInChildren<Text>();
+            if (labelText != null)
+            {
+                labelText.color = Muted;
+                labelText.fontSize = UiStyleTokens.CaptionFontSize;
+                labelText.alignment = TextAnchor.MiddleRight;
+            }
             return btn;
         }
 
