@@ -179,6 +179,78 @@ namespace ElonLifeSim.Core.Content
         {
             return AnchorMinY == 0f && AnchorMaxY > 0.12f && AnchorMaxY <= 0.28f;
         }
+
+        public const int ChoiceLeft = 118;
+        public const int ChoiceRightPad = 16;
+        public const int ChoiceRowHeight = 26;
+        public const int ChoiceRowGap = 4;
+        public const int MinChoiceRows = 2;
+        public const int MaxChoiceRows = 3;
+        public const int ContinueWidth = 110;
+        public const int ContinueHeight = 24;
+        public const int ContinueBottomPad = 8;
+
+        public static float StripInnerHeight()
+        {
+            return AnchorMaxY * UiStyleTokens.ReferenceHeight - BottomPad;
+        }
+
+        public static float ChoiceStackHeight(int count)
+        {
+            if (count < 1)
+                return 0f;
+            return count * ChoiceRowHeight + (count - 1) * ChoiceRowGap;
+        }
+
+        /// <summary>Bottom padding of the choice stack; occupies the Continue band when Continue is hidden.</summary>
+        public static float ChoiceStackBottom => ContinueBottomPad;
+
+        public static HudRect ContinueBand()
+        {
+            float innerH = StripInnerHeight();
+            float y = innerH - ContinueBottomPad - ContinueHeight;
+            float x = UiStyleTokens.ReferenceWidth - ChoiceRightPad - ContinueWidth;
+            return new HudRect(x, y, ContinueWidth, ContinueHeight);
+        }
+
+        /// <summary>Choice row i of count, Y-down in strip inner space. Packed from the Continue band upward.</summary>
+        public static HudRect ChoiceRow(int index, int count)
+        {
+            if (count < MinChoiceRows)
+                count = MinChoiceRows;
+            if (count > MaxChoiceRows)
+                count = MaxChoiceRows;
+            if (index < 0 || index >= count)
+                return new HudRect(0, 0, 0, 0);
+            float innerH = StripInnerHeight();
+            float stackH = ChoiceStackHeight(count);
+            float topOfStack = innerH - ChoiceStackBottom - stackH;
+            float y = topOfStack + index * (ChoiceRowHeight + ChoiceRowGap);
+            float w = UiStyleTokens.ReferenceWidth - ChoiceLeft - ChoiceRightPad;
+            return new HudRect(ChoiceLeft, y, w, ChoiceRowHeight);
+        }
+
+        public static bool ChoiceRowsFitInsideStrip(int count)
+        {
+            if (count < MinChoiceRows || count > MaxChoiceRows)
+                return false;
+            float innerH = StripInnerHeight();
+            float width = UiStyleTokens.ReferenceWidth;
+            var cont = ContinueBand();
+            if (!cont.FullyInside(width, innerH, 0f))
+                return false;
+            for (int i = 0; i < count; i++)
+            {
+                var row = ChoiceRow(i, count);
+                if (row.H != ChoiceRowHeight)
+                    return false;
+                if (!row.FullyInside(width, innerH, 0f))
+                    return false;
+            }
+
+            var last = ChoiceRow(count - 1, count);
+            return last.Bottom <= innerH + 0.01f && last.Bottom + 0.01f >= cont.Y;
+        }
     }
 
     /// <summary>Dialogue strip portrait: era Elon from Resources, keyed by speaker + location.</summary>

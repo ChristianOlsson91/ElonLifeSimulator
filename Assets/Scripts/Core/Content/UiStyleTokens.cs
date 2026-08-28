@@ -48,7 +48,7 @@ namespace ElonLifeSim.Core.Content
         public const int ReferenceWidth = 1280;
         public const int ReferenceHeight = 720;
         public const int SheetActionHeight = 32;
-        public const float DialogueStripAnchorMaxY = 0.22f;
+        public const float DialogueStripAnchorMaxY = 0.27f;
         public const int DialogueStripBottomPad = 12;
         public const float DialogueFillA = 0.84f;
         public const float GhostFillA = 0.04f;

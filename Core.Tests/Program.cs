@@ -996,6 +996,26 @@ namespace ElonLifeSim.Core.Tests
             Assert(UiStyleTokens.GhostFillA < 0.15f, "Continue is a ghost fill");
             Assert(!UiStyleTokens.IsUnityDefaultButtonBlue(UiStyleTokens.GhostFillA, UiStyleTokens.GhostFillA, UiStyleTokens.GhostFillA),
                 "ghost is not Unity blue");
+            Assert(DialogueStripLayout.ChoiceRowsFitInsideStrip(2), "two HomeIntro-style choice rows fit");
+            Assert(DialogueStripLayout.ChoiceRowsFitInsideStrip(3), "three choice rows fit inside the strip");
+            var cont = DialogueStripLayout.ContinueBand();
+            Assert(cont.FullyInside(UiStyleTokens.ReferenceWidth, DialogueStripLayout.StripInnerHeight(), 0f),
+                "Continue band is inside the strip");
+            for (int n = 2; n <= 3; n++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    var row = DialogueStripLayout.ChoiceRow(i, n);
+                    Assert(row.H == DialogueStripLayout.ChoiceRowHeight, "row height " + n + ":" + i);
+                    Assert(row.FullyInside(UiStyleTokens.ReferenceWidth, DialogueStripLayout.StripInnerHeight(), 0f),
+                        "choice " + i + " of " + n + " inside strip");
+                    Assert(row.Bottom <= UiStyleTokens.ReferenceHeight + 0.01f, "choice does not clip the 720 canvas");
+                }
+
+                var last = DialogueStripLayout.ChoiceRow(n - 1, n);
+                Assert(last.Y < cont.Bottom && last.Bottom > cont.Y,
+                    "last choice reuses the Continue band when Continue is hidden");
+            }
         }
 
         private static void TestDialoguePortraitKey()
@@ -1033,6 +1053,10 @@ namespace ElonLifeSim.Core.Tests
             Assert(hud.IndexOf("DialogueStripLayout", StringComparison.Ordinal) >= 0, "dialogue strip tokens");
             Assert(hud.IndexOf("HUD_Canvas", StringComparison.Ordinal) >= 0, "single HUD canvas name");
             Assert(hud.IndexOf("CreateGhostButton", StringComparison.Ordinal) >= 0, "Continue is a ghost control");
+            Assert(hud.IndexOf("DialogueStripLayout.ChoiceStackHeight", StringComparison.Ordinal) >= 0,
+                "ChoicesRoot uses shipped choice-stack height");
+            Assert(hud.IndexOf("DialogueStripLayout.ChoiceLeft", StringComparison.Ordinal) >= 0,
+                "ChoicesRoot uses shipped choice left inset");
             Assert(hud.IndexOf("TopBarEdge", StringComparison.Ordinal) < 0, "no gold top-bar debug strip");
             Assert(hud.IndexOf("(Story)", StringComparison.Ordinal) < 0, "HUD builder has no (Story) suffix");
 
@@ -1067,6 +1091,8 @@ namespace ElonLifeSim.Core.Tests
 
             string dialogue = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "UI", "DialogueUI.cs"));
             Assert(dialogue.IndexOf("LoadPortrait", StringComparison.Ordinal) >= 0, "era portrait loader wired");
+            Assert(dialogue.IndexOf("DialogueStripLayout.ChoiceRowHeight", StringComparison.Ordinal) >= 0,
+                "choice rows use shipped row height");
             Assert(dialogue.IndexOf("DialoguePortrait.ResourceKey", StringComparison.Ordinal) >= 0,
                 "speaker portrait uses shipped key");
 

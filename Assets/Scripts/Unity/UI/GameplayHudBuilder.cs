@@ -194,13 +194,20 @@ namespace ElonLifeSim.Unity.UI
 
             var choicesRoot = new GameObject("ChoicesRoot", typeof(RectTransform), typeof(VerticalLayoutGroup));
             choicesRoot.transform.SetParent(dialoguePanel.transform, false);
-            UiTheme.Stretch(choicesRoot.GetComponent<RectTransform>(), new Vector2(0, 0), new Vector2(1, 0.36f),
-                new Vector2(118, 36), new Vector2(-16, 4));
+            var cRt = choicesRoot.GetComponent<RectTransform>();
+            cRt.anchorMin = new Vector2(0f, 0f);
+            cRt.anchorMax = new Vector2(1f, 0f);
+            cRt.pivot = new Vector2(0f, 0f);
+            cRt.anchoredPosition = new Vector2(DialogueStripLayout.ChoiceLeft, DialogueStripLayout.ChoiceStackBottom);
+            cRt.sizeDelta = new Vector2(
+                -(DialogueStripLayout.ChoiceLeft + DialogueStripLayout.ChoiceRightPad),
+                DialogueStripLayout.ChoiceStackHeight(DialogueStripLayout.MaxChoiceRows));
             var vlg = choicesRoot.GetComponent<VerticalLayoutGroup>();
-            vlg.spacing = 4;
-            vlg.childAlignment = TextAnchor.UpperLeft;
+            vlg.spacing = DialogueStripLayout.ChoiceRowGap;
+            vlg.childAlignment = TextAnchor.LowerLeft;
             vlg.childControlHeight = false;
             vlg.childControlWidth = true;
+            vlg.childForceExpandWidth = true;
 
             var inboxUi = canvasGo.AddComponent<InboxUI>();
             inboxUi.Bind(session, inboxPanel, inboxList, inboxDetail, acceptBtn, inboxClose, null);

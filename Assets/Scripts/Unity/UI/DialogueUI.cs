@@ -152,10 +152,15 @@ namespace ElonLifeSim.Unity.UI
             for (int i = 0; i < choices.Count; i++)
             {
                 int index = i;
-                var go = new GameObject($"Choice_{i}", typeof(RectTransform), typeof(Image), typeof(Button));
+                var go = new GameObject($"Choice_{i}", typeof(RectTransform), typeof(Image), typeof(Button),
+                    typeof(LayoutElement));
                 go.transform.SetParent(choicesRoot, false);
                 var rt = go.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(480, 36);
+                rt.sizeDelta = new Vector2(0, DialogueStripLayout.ChoiceRowHeight);
+                var le = go.GetComponent<LayoutElement>();
+                le.minHeight = DialogueStripLayout.ChoiceRowHeight;
+                le.preferredHeight = DialogueStripLayout.ChoiceRowHeight;
+                le.flexibleWidth = 1f;
 
                 var img = go.GetComponent<Image>();
                 var btn = go.GetComponent<Button>();
