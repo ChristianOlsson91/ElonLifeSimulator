@@ -94,7 +94,11 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void SetupPlayer()
         {
-            ElonAppearanceApplier.Apply(locationId);
+            var loc = locationId;
+            var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (ElonEraResolver.IsPretoria(loc) || ElonEraResolver.IsPretoria(sceneName))
+                loc = PrototypeContent.LocationPretoria;
+            ElonAppearanceApplier.Apply(loc);
         }
 
         private void SetupControllers()

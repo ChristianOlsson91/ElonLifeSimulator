@@ -30,7 +30,7 @@ namespace ElonLifeSim.Unity.Controllers
         private void Start()
         {
             var session = GameBootstrap.RequireSession();
-            if (session == null)
+            if (session == null || !session.HasStarted)
             {
                 var bootstrap = GameBootstrap.Instance;
                 if (bootstrap != null)

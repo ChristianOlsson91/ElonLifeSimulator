@@ -39,15 +39,60 @@ namespace ElonLifeSim.Core.Content
         public static string EraFolderForLocation(string locationId, string actId = null)
         {
             _ = actId; // reserved: act progress may override later
-            if (locationId == PrototypeContent.LocationPretoria)
+            if (IsPretoria(locationId))
                 return EraYoungSa;
-            if (locationId == PrototypeContent.LocationToronto)
+            if (IsToronto(locationId))
                 return EraYoungAdult90s;
-            if (locationId == PrototypeContent.LocationPaloAlto)
+            if (IsPaloAlto(locationId))
                 return EraEarly2000s;
-            if (locationId == "mars" || locationId == EraMars)
+            if (IsMars(locationId))
                 return EraMars;
-            return EraModern;
+            // Empty/unknown stays Pretoria — never fall through to modern on Act 1.
+            return EraYoungSa;
+        }
+
+        public static bool IsPretoria(string locationId)
+        {
+            if (string.IsNullOrEmpty(locationId))
+                return true;
+            if (locationId == PrototypeContent.LocationPretoria)
+                return true;
+            return ContainsIgnoreCase(locationId, "pretoria")
+                   || ContainsIgnoreCase(locationId, "southafrica")
+                   || ContainsIgnoreCase(locationId, "south_africa");
+        }
+
+        public static bool IsToronto(string locationId)
+        {
+            if (string.IsNullOrEmpty(locationId))
+                return false;
+            if (locationId == PrototypeContent.LocationToronto)
+                return true;
+            return ContainsIgnoreCase(locationId, "toronto")
+                   || ContainsIgnoreCase(locationId, "canada");
+        }
+
+        public static bool IsPaloAlto(string locationId)
+        {
+            if (string.IsNullOrEmpty(locationId))
+                return false;
+            if (locationId == PrototypeContent.LocationPaloAlto)
+                return true;
+            return ContainsIgnoreCase(locationId, "palo")
+                   || ContainsIgnoreCase(locationId, "silicon");
+        }
+
+        public static bool IsMars(string locationId)
+        {
+            if (string.IsNullOrEmpty(locationId))
+                return false;
+            return locationId == "mars" || locationId == EraMars
+                   || ContainsIgnoreCase(locationId, "mars");
+        }
+
+        private static bool ContainsIgnoreCase(string haystack, string needle)
+        {
+            return haystack.IndexOf(needle, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static string IdleResourceKey(string locationId, string actId = null)

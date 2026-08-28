@@ -648,6 +648,12 @@ namespace ElonLifeSim.Core.Tests
                    == "Characters/Elon/02_young_adult_90s/elon_young_adult_idle", "toronto idle key");
             Assert(ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPretoria, "act8_mars") == pret,
                 "actId must not override Pretoria");
+            Assert(ElonEraResolver.EraFolderForLocation("SouthAfrica_Pretoria") == "01_young_sa",
+                "scene name Pretoria is young SA");
+            Assert(ElonEraResolver.EraFolderForLocation(null) == "01_young_sa",
+                "empty location stays Pretoria, not modern");
+            Assert(ElonEraResolver.EraFolderForLocation("unknown_place") == "01_young_sa",
+                "unknown stays Pretoria during Act 1 default");
         }
 
         private static void TestElonEraSwapOnTravelLocationChanged()
