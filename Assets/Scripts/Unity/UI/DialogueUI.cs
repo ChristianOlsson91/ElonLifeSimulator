@@ -39,6 +39,10 @@ namespace ElonLifeSim.Unity.UI
                 panelRoot.SetActive(false);
         }
 
+        public void RefreshPortrait()
+        {
+        }
+
         public void Play(DialogueDefinition definition, Action onComplete = null)
         {
             var session = GameBootstrap.RequireSession();

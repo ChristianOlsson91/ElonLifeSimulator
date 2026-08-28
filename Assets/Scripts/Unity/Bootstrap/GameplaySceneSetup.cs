@@ -1,4 +1,5 @@
 using ElonLifeSim.Core.Content;
+using ElonLifeSim.Unity.Characters;
 using ElonLifeSim.Unity.Controllers;
 using ElonLifeSim.Unity.UI;
 using UnityEngine;
@@ -27,6 +28,16 @@ namespace ElonLifeSim.Unity.Bootstrap
             groundColor = ground;
             if (!_built)
                 Build();
+            else
+                SetupPlayer();
+        }
+
+        /// <summary>Re-apply era sprites for an existing or new Player_Elon.</summary>
+        public void RefreshPlayer(string locId)
+        {
+            if (!string.IsNullOrEmpty(locId))
+                locationId = locId;
+            SetupPlayer();
         }
 
         private void Awake()
@@ -83,25 +94,7 @@ namespace ElonLifeSim.Unity.Bootstrap
 
         private void SetupPlayer()
         {
-            if (GameObject.Find("Player_YoungElon_PLACEHOLDER") != null) return;
-
-            var player = new GameObject("Player_YoungElon_PLACEHOLDER");
-            player.transform.position = Vector3.zero;
-            var sr = player.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateSolidSprite(playerColor, 16, 24);
-            sr.sortingOrder = 10;
-            player.transform.localScale = new Vector3(0.5f, 0.75f, 1f);
-
-            var rb = player.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            rb.freezeRotation = true;
-            player.AddComponent<PixelPlayerController>();
-
-            var col = player.AddComponent<BoxCollider2D>();
-            col.size = new Vector2(0.8f, 1.2f);
-
-            // Visible name tag via TextMesh is overkill; log instead.
-            Debug.Log("[PLACEHOLDER] Young Elon player spawned — WASD/Arrows to move.");
+            ElonAppearanceApplier.Apply(locationId);
         }
 
         private void SetupControllers()
@@ -126,6 +119,8 @@ namespace ElonLifeSim.Unity.Bootstrap
                 var go = new GameObject("GameplayHudBuilder");
                 go.AddComponent<GameplayHudBuilder>();
             }
+
+            ElonAppearanceController.Ensure();
         }
 
         private static Sprite CreateSolidSprite(Color color, int w, int h)

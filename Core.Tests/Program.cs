@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ElonLifeSim.Core.Content;
 using ElonLifeSim.Core.Models;
@@ -57,6 +58,9 @@ namespace ElonLifeSim.Core.Tests
             Run("AfterZip2Found_PendingZip2Selectable", TestAfterZip2PendingSelectable);
             Run("TravelMapSelection_FreeTravelAmongUnlocked", TestFreeMapTravelSelection);
             Run("Session_FreeTravel_AfterAct1WithoutTicket", TestSessionFreeTravelAfterAct1);
+            Run("ElonEra_LocationMappingAndResourceKeys", TestElonEraLocationMappingAndResourceKeys);
+            Run("ElonEra_SwapOnTravelLocationChanged", TestElonEraSwapOnTravelLocationChanged);
+            Run("ElonSprite_ResourcesAndSceneUsePlayerElon", TestElonSpriteResourcesAndSceneWiring);
 
             Console.WriteLine();
             Console.WriteLine($"Results: {_passed} passed, {_failed} failed");
@@ -625,6 +629,77 @@ namespace ElonLifeSim.Core.Tests
             Assert(target == PrototypeContent.LocationToronto, "target canada");
             Assert(session.TravelTo(target), "session free travel");
             Assert(session.Travel.CurrentLocationId == PrototypeContent.LocationToronto, "at canada free");
+        }
+
+        private static void TestElonEraLocationMappingAndResourceKeys()
+        {
+            var pret = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPretoria);
+            var tor = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationToronto);
+            var palo = ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPaloAlto);
+
+            Assert(pret == "01_young_sa", "pretoria → school era, got " + pret);
+            Assert(tor == "02_young_adult_90s", "toronto era");
+            Assert(palo == "03_early_2000s", "palo alto era");
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationPretoria)
+                   == "Characters/Elon/01_young_sa/elon_young_sa_idle", "pretoria idle key");
+            Assert(ElonEraResolver.WalkResourceKey(PrototypeContent.LocationPretoria, 0)
+                   == "Characters/Elon/01_young_sa/walk/elon_young_sa_walk_00", "pretoria walk_00 key");
+            Assert(ElonEraResolver.IdleResourceKey(PrototypeContent.LocationToronto)
+                   == "Characters/Elon/02_young_adult_90s/elon_young_adult_idle", "toronto idle key");
+            Assert(ElonEraResolver.EraFolderForLocation(PrototypeContent.LocationPretoria, "act8_mars") == pret,
+                "actId must not override Pretoria");
+        }
+
+        private static void TestElonEraSwapOnTravelLocationChanged()
+        {
+            var travel = new TravelService();
+            travel.RegisterLocations(PrototypeContent.CreateLocations());
+            travel.SetStartingLocation(PrototypeContent.LocationPretoria);
+            string eraFromEvent = null;
+            travel.LocationChanged += (_, newId) =>
+            {
+                eraFromEvent = ElonEraResolver.EraFolderForLocation(newId);
+            };
+
+            Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "01_young_sa",
+                "start Pretoria school era");
+            travel.Unlock(PrototypeContent.LocationToronto);
+            Assert(travel.TravelTo(PrototypeContent.LocationToronto), "to toronto");
+            Assert(eraFromEvent == "02_young_adult_90s", "event era after toronto");
+            Assert(ElonEraResolver.EraFolderForLocation(travel.CurrentLocationId) == "02_young_adult_90s",
+                "current after toronto");
+        }
+
+        private static void TestElonSpriteResourcesAndSceneWiring()
+        {
+            string root = FindRepoRoot();
+            string idle = Path.Combine(root, "Assets", "Resources", "Characters", "Elon", "01_young_sa",
+                "elon_young_sa_idle.png");
+            Assert(File.Exists(idle), "young SA idle png in Resources");
+
+            string setup = File.ReadAllText(Path.Combine(root, "Assets", "Scripts", "Unity", "Bootstrap",
+                "GameplaySceneSetup.cs"));
+            Assert(setup.IndexOf("ElonAppearanceApplier.Apply", StringComparison.Ordinal) >= 0,
+                "scene uses Elon sprite applier");
+            Assert(setup.IndexOf("Player_YoungElon_PLACEHOLDER", StringComparison.Ordinal) < 0,
+                "scene does not spawn placeholder rectangle player");
+            Assert(setup.IndexOf("CreateSolidSprite(playerColor", StringComparison.Ordinal) < 0,
+                "player is not a solid color quad");
+        }
+
+        private static string FindRepoRoot()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                var marker = Path.Combine(dir.FullName, "Assets", "Scripts", "Unity", "Bootstrap",
+                    "GameplaySceneSetup.cs");
+                if (File.Exists(marker))
+                    return dir.FullName;
+                dir = dir.Parent;
+            }
+
+            throw new InvalidOperationException("repo root not found from " + AppContext.BaseDirectory);
         }
     }
 }
