@@ -4,6 +4,22 @@
 
 Unity 6 (6000.1.x) project with modular **Act 1 (South Africa)**, **company stats**, and **Zip2 / X.com** inbox problems.
 
+## Git act branches
+
+One branch per life chapter:
+
+- `act1-foundation` — Pretoria / childhood
+- `act2-canada` — Canada (UPenn at the end of this act)
+- `act3-zip2` — Zip2
+- `act4-xcom-paypal` — X.com / PayPal
+- `act5-spacex` — SpaceX (Starlink is in this act)
+- `act6-tesla` — Tesla (SolarCity is in this act)
+- `act7-x-platform` — X / the platform
+- `act8-boring` — The Boring Company
+- `act9-neuralink` — Neuralink
+- `act10-xai` — xAI
+- `act11-mars` — Starship / multiplanetary
+
 ---
 
 ## Open the project
@@ -164,7 +180,6 @@ Exercises **shipped** Core: Act1 unlock gate, company found/stats, distinct choi
 
 ## Roadmap (later)
 
-- Tesla, SpaceX, and remaining companies  
 - Timed inbox spawns, minigames, save/load  
 - Full tilemap school/home/library and production pixel art  
 
